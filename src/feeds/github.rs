@@ -52,7 +52,7 @@ impl FeedFetcher for GithubFetcher {
         let response = self
             .client
             .get(&url)
-            .header("Authorization", format!("Bearer {}", self.token))
+            .header("Authorization", format!("token {}", self.token))
             .header("User-Agent", "feedtui")
             .header("Accept", "application/vnd.github.v3+json")
             .send()
