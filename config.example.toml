@@ -39,9 +39,19 @@ feeds = [
 max_items = 10
 position = { row = 1, col = 0 }
 
-# Sports - bottom right
+# Sports - bottom middle
 [[widgets]]
 type = "sports"
 title = "Sports"
 leagues = ["nba", "nfl", "epl"]
 position = { row = 1, col = 1 }
+
+# GitHub Notifications - bottom right
+# Requires a GitHub personal access token with notifications scope
+# Set environment variable: export GITHUB_TOKEN=your_token_here
+[[widgets]]
+type = "github"
+title = "GitHub Notifications"
+token = "${GITHUB_TOKEN}"  # Replace with your GitHub token or use environment variable
+max_notifications = 20
+position = { row = 1, col = 2 }

@@ -43,6 +43,7 @@ pub enum WidgetConfig {
     Sports(SportsConfig),
     Rss(RssConfig),
     Creature(CreatureConfig),
+    Github(GithubConfig),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -129,6 +130,24 @@ fn default_max_items() -> usize {
     15
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GithubConfig {
+    #[serde(default = "default_github_title")]
+    pub title: String,
+    pub token: String,
+    #[serde(default = "default_max_notifications")]
+    pub max_notifications: usize,
+    pub position: Position,
+}
+
+fn default_github_title() -> String {
+    "GitHub Notifications".to_string()
+}
+
+fn default_max_notifications() -> usize {
+    20
+}
+
 impl Config {
     pub fn load(path: &Path) -> Result<Self> {
         let content = std::fs::read_to_string(path)?;
@@ -165,7 +184,9 @@ impl Default for Config {
                 }),
                 WidgetConfig::Rss(RssConfig {
                     title: "Tech News".to_string(),
-                    feeds: vec!["https://feeds.arstechnica.com/arstechnica/technology-lab".to_string()],
+                    feeds: vec![
+                        "https://feeds.arstechnica.com/arstechnica/technology-lab".to_string(),
+                    ],
                     max_items: 10,
                     position: Position { row: 1, col: 1 },
                 }),

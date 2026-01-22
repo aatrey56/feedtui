@@ -1,23 +1,23 @@
 use crate::config::{Config, WidgetConfig};
-use crate::creature::persistence::{default_creature_path, load_or_create_creature, save_creature};
 use crate::creature::Creature;
+use crate::creature::persistence::{default_creature_path, load_or_create_creature, save_creature};
 use crate::event::{Event, EventHandler};
 use crate::feeds::{FeedData, FeedMessage};
 use crate::ui::creature_menu::CreatureMenu;
 use crate::ui::widgets::{
-    creature::CreatureWidget, hackernews::HackernewsWidget, rss::RssWidget, sports::SportsWidget,
-    stocks::StocksWidget, FeedWidget,
+    FeedWidget, creature::CreatureWidget, github::GithubWidget, hackernews::HackernewsWidget,
+    rss::RssWidget, sports::SportsWidget, stocks::StocksWidget,
 };
 use anyhow::Result;
 use crossterm::{
     event::{DisableMouseCapture, EnableMouseCapture, KeyCode, KeyModifiers},
     execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
 use ratatui::{
+    Frame, Terminal,
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout},
-    Frame, Terminal,
 };
 use std::io::{self, Stdout};
 use std::path::PathBuf;
@@ -57,6 +57,7 @@ impl App {
                 WidgetConfig::Stocks(cfg) => Box::new(StocksWidget::new(cfg.clone())),
                 WidgetConfig::Rss(cfg) => Box::new(RssWidget::new(cfg.clone())),
                 WidgetConfig::Sports(cfg) => Box::new(SportsWidget::new(cfg.clone())),
+                WidgetConfig::Github(cfg) => Box::new(GithubWidget::new(cfg.clone())),
                 WidgetConfig::Creature(cfg) => {
                     creature_widget_idx = Some(widgets.len());
                     Box::new(CreatureWidget::new(cfg.clone(), creature.clone()))
@@ -303,8 +304,9 @@ impl App {
         let (max_row, max_col) = self.calculate_grid_dimensions();
 
         // Create row constraints
-        let row_constraints: Vec<Constraint> =
-            (0..=max_row).map(|_| Constraint::Ratio(1, (max_row + 1) as u32)).collect();
+        let row_constraints: Vec<Constraint> = (0..=max_row)
+            .map(|_| Constraint::Ratio(1, (max_row + 1) as u32))
+            .collect();
 
         let rows = Layout::default()
             .direction(Direction::Vertical)
@@ -313,8 +315,9 @@ impl App {
 
         // Create column constraints for each row
         for row_idx in 0..=max_row {
-            let col_constraints: Vec<Constraint> =
-                (0..=max_col).map(|_| Constraint::Ratio(1, (max_col + 1) as u32)).collect();
+            let col_constraints: Vec<Constraint> = (0..=max_col)
+                .map(|_| Constraint::Ratio(1, (max_col + 1) as u32))
+                .collect();
 
             let cols = Layout::default()
                 .direction(Direction::Horizontal)

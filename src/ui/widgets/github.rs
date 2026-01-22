@@ -1,6 +1,6 @@
-use crate::config::HackernewsConfig;
-use crate::feeds::hackernews::HnFetcher;
-use crate::feeds::{FeedData, FeedFetcher, HnStory};
+use crate::config::GithubConfig;
+use crate::feeds::github::GithubFetcher;
+use crate::feeds::{FeedData, FeedFetcher, GithubNotification};
 use crate::ui::widgets::FeedWidget;
 use ratatui::{
     Frame,
@@ -10,23 +10,23 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, ListState},
 };
 
-pub struct HackernewsWidget {
-    config: HackernewsConfig,
-    stories: Vec<HnStory>,
+pub struct GithubWidget {
+    config: GithubConfig,
+    notifications: Vec<GithubNotification>,
     loading: bool,
     error: Option<String>,
     scroll_state: ListState,
     selected: bool,
 }
 
-impl HackernewsWidget {
-    pub fn new(config: HackernewsConfig) -> Self {
+impl GithubWidget {
+    pub fn new(config: GithubConfig) -> Self {
         let mut scroll_state = ListState::default();
         scroll_state.select(Some(0));
 
         Self {
             config,
-            stories: Vec::new(),
+            notifications: Vec::new(),
             loading: true,
             error: None,
             scroll_state,
@@ -35,10 +35,10 @@ impl HackernewsWidget {
     }
 }
 
-impl FeedWidget for HackernewsWidget {
+impl FeedWidget for GithubWidget {
     fn id(&self) -> String {
         format!(
-            "hackernews-{}-{}",
+            "github-{}-{}",
             self.config.position.row, self.config.position.col
         )
     }
@@ -58,12 +58,19 @@ impl FeedWidget for HackernewsWidget {
             Style::default().fg(Color::White)
         };
 
+        let unread_count = self.notifications.iter().filter(|n| n.unread).count();
+        let title = if unread_count > 0 {
+            format!(" {} ({} unread) ", self.config.title, unread_count)
+        } else {
+            format!(" {} ", self.config.title)
+        };
+
         let block = Block::default()
-            .title(format!(" {} ", self.config.title))
+            .title(title)
             .borders(Borders::ALL)
             .border_style(border_style);
 
-        if self.loading && self.stories.is_empty() {
+        if self.loading && self.notifications.is_empty() {
             let loading_text = List::new(vec![ListItem::new("Loading...")]).block(block);
             frame.render_widget(loading_text, area);
             return;
@@ -76,29 +83,42 @@ impl FeedWidget for HackernewsWidget {
             return;
         }
 
+        if self.notifications.is_empty() {
+            let empty_text = List::new(vec![ListItem::new("No notifications")]).block(block);
+            frame.render_widget(empty_text, area);
+            return;
+        }
+
         let items: Vec<ListItem> = self
-            .stories
+            .notifications
             .iter()
             .enumerate()
-            .map(|(i, story)| {
+            .map(|(i, notif)| {
+                let unread_indicator = if notif.unread { "● " } else { "○ " };
                 let title_line = Line::from(vec![
-                    Span::styled(format!("{}. ", i + 1), Style::default().fg(Color::DarkGray)),
-                    Span::styled(&story.title, Style::default().fg(Color::White)),
+                    Span::styled(
+                        format!("{}{} ", unread_indicator, i + 1),
+                        if notif.unread {
+                            Style::default()
+                                .fg(Color::Green)
+                                .add_modifier(Modifier::BOLD)
+                        } else {
+                            Style::default().fg(Color::DarkGray)
+                        },
+                    ),
+                    Span::styled(&notif.title, Style::default().fg(Color::White)),
                 ]);
 
                 let meta_line = Line::from(vec![
                     Span::styled(
-                        format!("   {} pts | ", story.score),
-                        Style::default().fg(Color::Yellow),
-                    ),
-                    Span::styled(
-                        format!("{} comments | ", story.descendants),
+                        format!("   {} | ", notif.repository),
                         Style::default().fg(Color::Cyan),
                     ),
                     Span::styled(
-                        format!("by {}", story.by),
-                        Style::default().fg(Color::DarkGray),
+                        format!("{} | ", notif.notification_type),
+                        Style::default().fg(Color::Yellow),
                     ),
+                    Span::styled(&notif.reason, Style::default().fg(Color::DarkGray)),
                 ]);
 
                 ListItem::new(vec![title_line, meta_line])
@@ -118,8 +138,8 @@ impl FeedWidget for HackernewsWidget {
     fn update_data(&mut self, data: FeedData) {
         self.loading = false;
         match data {
-            FeedData::HackerNews(stories) => {
-                self.stories = stories;
+            FeedData::Github(notifications) => {
+                self.notifications = notifications;
                 self.error = None;
             }
             FeedData::Error(e) => {
@@ -133,9 +153,9 @@ impl FeedWidget for HackernewsWidget {
     }
 
     fn create_fetcher(&self) -> Box<dyn FeedFetcher> {
-        Box::new(HnFetcher::new(
-            self.config.story_type.clone(),
-            self.config.story_count,
+        Box::new(GithubFetcher::new(
+            self.config.token.clone(),
+            self.config.max_notifications,
         ))
     }
 
@@ -149,7 +169,7 @@ impl FeedWidget for HackernewsWidget {
 
     fn scroll_down(&mut self) {
         if let Some(selected) = self.scroll_state.selected() {
-            if selected < self.stories.len().saturating_sub(1) {
+            if selected < self.notifications.len().saturating_sub(1) {
                 self.scroll_state.select(Some(selected + 1));
             }
         }

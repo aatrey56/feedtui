@@ -1,3 +1,4 @@
+pub mod github;
 pub mod hackernews;
 pub mod rss;
 pub mod sports;
@@ -18,6 +19,7 @@ pub enum FeedData {
     Stocks(Vec<StockQuote>),
     Rss(Vec<RssItem>),
     Sports(Vec<SportsEvent>),
+    Github(Vec<GithubNotification>),
     Loading,
     Error(String),
 }
@@ -58,6 +60,18 @@ pub struct SportsEvent {
     pub away_score: Option<u32>,
     pub status: String,
     pub start_time: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct GithubNotification {
+    pub id: String,
+    pub title: String,
+    pub notification_type: String,
+    pub repository: String,
+    pub url: String,
+    pub unread: bool,
+    pub updated_at: String,
+    pub reason: String,
 }
 
 #[async_trait]
