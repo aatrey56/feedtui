@@ -12,21 +12,53 @@ A configurable terminal dashboard for browsing news, stocks, sports, and more - 
 
 ## Installation
 
+### Option 1: Quick Install Script
+
+```bash
+git clone https://github.com/muk2/feedtui
+cd feedtui
+./install.sh
+```
+
+### Option 2: Using Make
+
+```bash
+git clone https://github.com/muk2/feedtui
+cd feedtui
+make install
+```
+
+### Option 3: Manual Install
+
+```bash
+git clone https://github.com/muk2/feedtui
+cd feedtui
+cargo install --path .
+```
+
+All methods install the `feedtui` binary to `~/.cargo/bin/`. Make sure this directory is in your PATH.
+
+### From crates.io (when published)
+
 ```bash
 cargo install feedtui
 ```
 
-Or build from source:
+## Getting Started
+
+### Interactive Configuration Wizard
+
+The easiest way to get started is to run the configuration wizard:
 
 ```bash
-git clone https://github.com/yourusername/feedtui
-cd feedtui
-cargo build --release
+feedtui init
 ```
 
-## Configuration
+This will guide you through setting up your dashboard with an interactive prompt.
 
-Create a `.feedtui` folder in your home directory and add a `config.toml` file:
+### Manual Configuration
+
+Alternatively, create a `.feedtui` folder in your home directory and add a `config.toml` file:
 
 ```bash
 mkdir -p ~/.feedtui
@@ -34,6 +66,39 @@ cp config.example.toml ~/.feedtui/config.toml
 ```
 
 Edit the config to customize your dashboard layout and feeds.
+
+## Usage
+
+### Run the dashboard
+
+```bash
+feedtui
+```
+
+### Command-line options
+
+```bash
+# Use a custom config file
+feedtui --config /path/to/config.toml
+
+# Override refresh interval
+feedtui --refresh 30
+
+# View configuration status
+feedtui config
+
+# Reconfigure with wizard
+feedtui init --force
+
+# Show installation help
+feedtui install
+
+# Show version
+feedtui --version
+
+# Show help
+feedtui --help
+```
 
 ## Meet Tui!
 
@@ -116,6 +181,46 @@ type = "stocks"
 title = "Portfolio"
 symbols = ["AAPL", "GOOGL", "MSFT"]
 position = { row = 1, col = 0 }
+```
+
+## Development
+
+### Running from source (without installing)
+
+```bash
+# Debug mode
+cargo run
+
+# Release mode
+cargo run --release
+
+# Or use make
+make dev    # debug mode
+make run    # release mode
+```
+
+### Common development tasks
+
+```bash
+# Format code
+cargo fmt
+# or
+make fmt
+
+# Run linter
+cargo clippy
+# or
+make clippy
+
+# Run tests
+cargo test
+# or
+make test
+
+# Clean build artifacts
+cargo clean
+# or
+make clean
 ```
 
 ## License
