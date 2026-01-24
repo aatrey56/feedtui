@@ -1,9 +1,15 @@
 [package]
 name = "feedtui"
 version = "0.1.0"
-edition = "2024"
-description = "A configurable terminal dashboard for stocks, news, sports, and social feeds"
+edition = "2021"
+description = "A configurable terminal dashboard for stocks, news, sports, and social feeds with a virtual pet companion"
 authors = ["malchal"]
+license = "MIT"
+repository = "https://github.com/muk2/feedtui"
+homepage = "https://github.com/muk2/feedtui"
+readme = "README.md"
+keywords = ["tui", "dashboard", "terminal", "rss", "stocks"]
+categories = ["command-line-utilities"]
 
 [dependencies]
 ratatui = "0.29"

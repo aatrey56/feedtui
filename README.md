@@ -38,7 +38,7 @@ cargo install --path .
 
 All methods install the `feedtui` binary to `~/.cargo/bin/`. Make sure this directory is in your PATH.
 
-### From crates.io (when published)
+### From crates.io
 
 ```bash
 cargo install feedtui
