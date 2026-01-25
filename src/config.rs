@@ -44,6 +44,7 @@ pub enum WidgetConfig {
     Rss(RssConfig),
     Creature(CreatureConfig),
     Github(GithubConfig),
+    Youtube(YoutubeConfig),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -177,6 +178,28 @@ fn default_max_pull_requests() -> usize {
 
 fn default_max_commits() -> usize {
     10
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct YoutubeConfig {
+    #[serde(default = "default_youtube_title")]
+    pub title: String,
+    pub api_key: String,
+    #[serde(default)]
+    pub channels: Vec<String>,
+    #[serde(default)]
+    pub search_query: Option<String>,
+    #[serde(default = "default_max_videos")]
+    pub max_videos: usize,
+    pub position: Position,
+}
+
+fn default_youtube_title() -> String {
+    "YouTube".to_string()
+}
+
+fn default_max_videos() -> usize {
+    15
 }
 
 impl Config {

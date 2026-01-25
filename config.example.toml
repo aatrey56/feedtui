@@ -63,3 +63,17 @@ max_notifications = 20
 max_pull_requests = 10
 max_commits = 10
 position = { row = 1, col = 2 }
+
+# YouTube Widget - Optional
+# Display YouTube videos from channels or search queries
+# Requires a YouTube Data API v3 key
+# Get your API key from: https://console.cloud.google.com/apis/credentials
+# Set environment variable: export YOUTUBE_API_KEY=your_key_here
+# [[widgets]]
+# type = "youtube"
+# title = "YouTube"
+# api_key = "${YOUTUBE_API_KEY}"  # Replace with your YouTube API key or use environment variable
+# channels = []  # Optional: List of channel IDs to display videos from
+# search_query = "rust programming"  # Optional: Search query for videos
+# max_videos = 15
+# position = { row = 2, col = 0 }

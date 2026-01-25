@@ -4,6 +4,7 @@ pub mod hackernews;
 pub mod rss;
 pub mod sports;
 pub mod stocks;
+pub mod youtube;
 
 use crate::feeds::{FeedData, FeedFetcher};
 use ratatui::{Frame, layout::Rect};

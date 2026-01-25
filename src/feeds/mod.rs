@@ -3,6 +3,7 @@ pub mod hackernews;
 pub mod rss;
 pub mod sports;
 pub mod stocks;
+pub mod youtube;
 
 use anyhow::Result;
 use async_trait::async_trait;
@@ -20,6 +21,7 @@ pub enum FeedData {
     Rss(Vec<RssItem>),
     Sports(Vec<SportsEvent>),
     Github(GithubDashboard),
+    Youtube(Vec<YoutubeVideo>),
     Loading,
     Error(String),
 }
@@ -110,6 +112,18 @@ pub struct GithubDashboard {
     pub notifications: Vec<GithubNotification>,
     pub pull_requests: Vec<GithubPullRequest>,
     pub commits: Vec<GithubCommit>,
+}
+
+#[derive(Debug, Clone)]
+pub struct YoutubeVideo {
+    pub id: String,
+    pub title: String,
+    pub channel: String,
+    pub published: String,
+    pub description: String,
+    pub thumbnail_url: Option<String>,
+    pub view_count: Option<String>,
+    pub duration: Option<String>,
 }
 
 #[async_trait]
