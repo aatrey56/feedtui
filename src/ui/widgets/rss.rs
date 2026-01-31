@@ -170,4 +170,8 @@ impl FeedWidget for RssWidget {
             metadata: item.published.clone(),
         })
     }
+
+    fn get_selected_discussion_url(&self) -> Option<String> {
+        None
+    }
 }

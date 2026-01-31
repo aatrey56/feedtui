@@ -207,4 +207,8 @@ impl FeedWidget for YoutubeWidget {
             metadata: Some(metadata_parts.join(" | ")),
         })
     }
+
+    fn get_selected_discussion_url(&self) -> Option<String> {
+        None
+    }
 }
