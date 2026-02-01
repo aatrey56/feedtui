@@ -17,8 +17,10 @@ use crossterm::{
 };
 use ratatui::{
     backend::CrosstermBackend,
-    layout::{Constraint, Direction, Layout, Rect},
-    Frame, Terminal,
+    layout::{Constraint, Direction, Layout},
+    Frame,
+    Terminal,
+    prelude::Rect
 };
 use std::io::{self, Stdout};
 use std::path::PathBuf;
@@ -188,6 +190,8 @@ impl App {
                             }
                         }
                         KeyCode::Up | KeyCode::Char('k') => self.creature_menu.scroll_up(),
+                        KeyCode::Left | KeyCode::Char('h') => self.creature_menu.prev_panel(),
+                        KeyCode::Right | KeyCode::Char('l') => self.creature_menu.next_panel(),
                         KeyCode::Enter => {
                             if let Some(idx) = self.creature_widget_idx {
                                 if let Some(widget) = self.widgets.get_mut(idx) {
