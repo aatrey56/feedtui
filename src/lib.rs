@@ -2,14 +2,16 @@
 //!
 //! This module provides Python-callable functions to launch the feedtui TUI application.
 
-mod app;
-mod config;
-mod creature;
-mod event;
-mod feeds;
-mod ui;
+pub mod app;
+pub mod config;
+pub mod creature;
+pub mod event;
+pub mod feeds;
+pub mod ui;
 
+#[cfg(feature = "python")]
 use pyo3::prelude::*;
+#[cfg(feature = "python")]
 use std::path::PathBuf;
 
 /// Run the feedtui TUI application
@@ -20,6 +22,7 @@ use std::path::PathBuf;
 ///
 /// Returns:
 ///     None on success, raises an exception on error
+#[cfg(feature = "python")]
 #[pyfunction]
 #[pyo3(signature = (config_path=None, refresh_interval=None))]
 fn run(config_path: Option<String>, refresh_interval: Option<u64>) -> PyResult<()> {
@@ -32,6 +35,7 @@ fn run(config_path: Option<String>, refresh_interval: Option<u64>) -> PyResult<(
         .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
 }
 
+#[cfg(feature = "python")]
 async fn run_app(config_path: Option<String>, refresh_interval: Option<u64>) -> anyhow::Result<()> {
     // Load config from specified path or default location
     let config_path = config_path.map(PathBuf::from).unwrap_or_else(|| {
@@ -67,6 +71,7 @@ async fn run_app(config_path: Option<String>, refresh_interval: Option<u64>) -> 
 ///
 /// Returns:
 ///     Path to the created config file
+#[cfg(feature = "python")]
 #[pyfunction]
 #[pyo3(signature = (force=false))]
 fn init_config(force: bool) -> PyResult<String> {
@@ -101,6 +106,7 @@ fn init_config(force: bool) -> PyResult<String> {
 }
 
 /// Get the path to the config file
+#[cfg(feature = "python")]
 #[pyfunction]
 fn get_config_path() -> String {
     dirs::home_dir()
@@ -112,12 +118,14 @@ fn get_config_path() -> String {
 }
 
 /// Get the version of feedtui
+#[cfg(feature = "python")]
 #[pyfunction]
 fn version() -> &'static str {
     env!("CARGO_PKG_VERSION")
 }
 
 /// Python module definition
+#[cfg(feature = "python")]
 #[pymodule]
 fn feedtui(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(run, m)?)?;

@@ -41,6 +41,6 @@ Issues = "https://github.com/muk2/feedtui/issues"
 feedtui = "feedtui:_cli_main"
 
 [tool.maturin]
-features = ["pyo3/extension-module"]
+features = ["python"]
 python-source = "python"
 module-name = "feedtui"

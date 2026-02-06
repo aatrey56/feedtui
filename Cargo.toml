@@ -14,13 +14,17 @@ categories = ["command-line-utilities"]
 [lib]
 name = "feedtui"
 crate-type = ["cdylib", "rlib"]
+required-features = ["python"]
 
 [[bin]]
 name = "feedtui"
 path = "src/main.rs"
 
+[features]
+python = ["pyo3"]
+
 [dependencies]
-pyo3 = { version = "0.22", features = ["extension-module"] }
+pyo3 = { version = "0.22", features = ["extension-module"], optional = true }
 ratatui = "0.29"
 crossterm = "0.28"
 tokio = { version = "1", features = ["full"] }
