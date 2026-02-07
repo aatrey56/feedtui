@@ -21,6 +21,7 @@ struct YoutubeSearchResponse {
 #[derive(Debug, Deserialize)]
 struct SearchItem {
     id: VideoId,
+    #[allow(dead_code)]
     snippet: Snippet,
 }
 
@@ -33,10 +34,12 @@ enum VideoId {
     },
     Channel {
         #[serde(rename = "channelId")]
+        #[allow(dead_code)]
         channel_id: String,
     },
     Playlist {
         #[serde(rename = "playlistId")]
+        #[allow(dead_code)]
         playlist_id: String,
     },
 }

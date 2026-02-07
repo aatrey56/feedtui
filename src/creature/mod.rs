@@ -192,8 +192,7 @@ impl Creature {
     pub fn tick_session(&mut self, seconds: u64) -> u64 {
         self.total_time_seconds += seconds;
         // 1 XP per 10 seconds of usage
-        let xp_gained = seconds / 10;
-        xp_gained
+        seconds / 10
     }
 
     /// Check if a skill can be purchased
@@ -243,8 +242,9 @@ impl Creature {
 }
 
 /// Available creature species to choose from
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub enum CreatureSpecies {
+    #[default]
     Blob,    // Friendly slime creature
     Bird,    // Chirpy bird
     Cat,     // Classic cat companion
@@ -255,12 +255,6 @@ pub enum CreatureSpecies {
     Robot,   // Friendly robot
     Spirit,  // Mystical spirit
     Octopus, // Multi-tasking octopus
-}
-
-impl Default for CreatureSpecies {
-    fn default() -> Self {
-        CreatureSpecies::Blob
-    }
 }
 
 impl CreatureSpecies {

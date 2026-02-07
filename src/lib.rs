@@ -2,6 +2,8 @@
 //!
 //! This module provides Python-callable functions to launch the feedtui TUI application.
 
+#![allow(clippy::useless_conversion)]
+
 pub mod app;
 pub mod config;
 pub mod creature;
