@@ -25,6 +25,7 @@ use std::path::PathBuf;
 #[cfg(feature = "python")]
 #[pyfunction]
 #[pyo3(signature = (config_path=None, refresh_interval=None))]
+#[allow(clippy::useless_conversion)]
 fn run(config_path: Option<String>, refresh_interval: Option<u64>) -> PyResult<()> {
     // Build the tokio runtime
     let runtime = tokio::runtime::Runtime::new()
@@ -74,6 +75,7 @@ async fn run_app(config_path: Option<String>, refresh_interval: Option<u64>) -> 
 #[cfg(feature = "python")]
 #[pyfunction]
 #[pyo3(signature = (force=false))]
+#[allow(clippy::useless_conversion)]
 fn init_config(force: bool) -> PyResult<String> {
     let config_dir = dirs::home_dir()
         .unwrap_or_else(|| PathBuf::from("."))
