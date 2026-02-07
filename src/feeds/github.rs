@@ -43,6 +43,7 @@ struct Repository {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct GithubApiPullRequest {
     id: u64,
     number: u32,
@@ -65,6 +66,7 @@ struct User {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct GithubApiCommit {
     sha: String,
     commit: CommitDetails,
@@ -73,12 +75,14 @@ struct GithubApiCommit {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct CommitDetails {
     message: String,
     author: CommitAuthor,
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct CommitAuthor {
     name: String,
     date: String,
@@ -116,6 +120,7 @@ struct EventCommitAuthor {
 }
 
 impl GithubFetcher {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         token: String,
         username: String,

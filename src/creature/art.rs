@@ -333,6 +333,7 @@ pub fn get_idle_message(frame: usize) -> &'static str {
 }
 
 /// Get level up celebration art
+#[allow(dead_code)]
 pub fn get_level_up_art() -> Vec<&'static str> {
     vec![
         "  *  LEVEL UP!  *",
@@ -344,6 +345,7 @@ pub fn get_level_up_art() -> Vec<&'static str> {
 }
 
 /// Get XP bar visualization
+#[allow(dead_code)]
 pub fn get_xp_bar(progress: f64, width: usize) -> String {
     let filled = (progress * width as f64) as usize;
     let empty = width.saturating_sub(filled);

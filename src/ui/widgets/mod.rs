@@ -22,6 +22,7 @@ pub struct SelectedItem {
 
 pub trait FeedWidget: Send + Sync {
     fn id(&self) -> String;
+    #[allow(dead_code)]
     fn title(&self) -> &str;
     fn position(&self) -> (usize, usize);
     fn render(&self, frame: &mut Frame, area: Rect, selected: bool);
@@ -45,5 +46,6 @@ pub trait FeedWidget: Send + Sync {
     fn as_any_mut(&mut self) -> Option<&mut dyn Any> {
         None
     }
+    #[allow(dead_code)]
     fn get_selected_discussion_url(&self) -> Option<String>;
 }

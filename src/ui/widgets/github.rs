@@ -148,8 +148,7 @@ impl GithubWidget {
         self.dashboard
             .pull_requests
             .iter()
-            .enumerate()
-            .map(|(_i, pr)| {
+            .map(|pr| {
                 let status_icon = if pr.draft {
                     "📝 "
                 } else if pr.state == "open" {
@@ -192,8 +191,7 @@ impl GithubWidget {
         self.dashboard
             .commits
             .iter()
-            .enumerate()
-            .map(|(_i, commit)| {
+            .map(|commit| {
                 let title_line = Line::from(vec![
                     Span::styled(
                         format!("🔹 {} ", &commit.sha),

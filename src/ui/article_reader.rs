@@ -10,22 +10,12 @@ use ratatui::{
 };
 
 /// Article reader overlay for viewing feed content in the terminal
+#[derive(Default)]
 pub struct ArticleReader {
     pub visible: bool,
     item: Option<SelectedItem>,
     scroll_offset: u16,
     content_height: u16,
-}
-
-impl Default for ArticleReader {
-    fn default() -> Self {
-        Self {
-            visible: false,
-            item: None,
-            scroll_offset: 0,
-            content_height: 0,
-        }
-    }
 }
 
 impl ArticleReader {
@@ -44,6 +34,7 @@ impl ArticleReader {
     }
 
     /// Toggle visibility
+    #[allow(dead_code)]
     pub fn toggle(&mut self) {
         if self.visible {
             self.hide();
@@ -265,8 +256,8 @@ fn strip_html_tags(html: &str) -> String {
                 "#39" => result.push('\''),
                 _ => {
                     // Try numeric entities
-                    if entity.starts_with('#') {
-                        if let Ok(code) = entity[1..].parse::<u32>() {
+                    if let Some(stripped) = entity.strip_prefix('#') {
+                        if let Ok(code) = stripped.parse::<u32>() {
                             if let Some(c) = char::from_u32(code) {
                                 result.push(c);
                             }

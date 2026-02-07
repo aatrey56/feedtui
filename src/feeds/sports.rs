@@ -15,6 +15,7 @@ struct EspnResponse {
 
 #[derive(Debug, Deserialize)]
 struct EspnEvent {
+    #[allow(dead_code)]
     name: String,
     status: EspnStatus,
     competitions: Vec<EspnCompetition>,
