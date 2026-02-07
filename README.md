@@ -12,7 +12,27 @@ A configurable terminal dashboard for browsing news, stocks, sports, and more - 
 
 ## Installation
 
-### Option 1: Quick Install Script
+### Option 1: Install via pip (Recommended)
+
+No Rust toolchain required! Install directly from PyPI:
+
+```bash
+pip install feedtui
+```
+
+Or with pipx for isolated installation:
+
+```bash
+pipx install feedtui
+```
+
+### Option 2: From crates.io (Rust)
+
+```bash
+cargo install feedtui
+```
+
+### Option 3: Quick Install Script
 
 ```bash
 git clone https://github.com/muk2/feedtui
@@ -20,7 +40,7 @@ cd feedtui
 ./install.sh
 ```
 
-### Option 2: Using Make
+### Option 4: Using Make
 
 ```bash
 git clone https://github.com/muk2/feedtui
@@ -28,7 +48,7 @@ cd feedtui
 make install
 ```
 
-### Option 3: Manual Install
+### Option 5: Manual Install
 
 ```bash
 git clone https://github.com/muk2/feedtui
@@ -36,13 +56,7 @@ cd feedtui
 cargo install --path .
 ```
 
-All methods install the `feedtui` binary to `~/.cargo/bin/`. Make sure this directory is in your PATH.
-
-### From crates.io
-
-```bash
-cargo install feedtui
-```
+All Rust-based methods install the `feedtui` binary to `~/.cargo/bin/`. Make sure this directory is in your PATH.
 
 ## Getting Started
 
@@ -181,6 +195,33 @@ type = "stocks"
 title = "Portfolio"
 symbols = ["AAPL", "GOOGL", "MSFT"]
 position = { row = 1, col = 0 }
+```
+
+## Python API
+
+If you installed via pip, you can also use feedtui as a Python library:
+
+```python
+import feedtui
+
+# Run the TUI
+feedtui.run()
+
+# Run with custom config
+feedtui.run(config_path="/path/to/config.toml")
+
+# Run with custom refresh interval
+feedtui.run(refresh_interval=30)
+
+# Initialize a new config file
+config_path = feedtui.init_config()
+print(f"Config created at: {config_path}")
+
+# Get config path
+print(feedtui.get_config_path())
+
+# Get version
+print(feedtui.version())
 ```
 
 ## Development

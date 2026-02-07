@@ -1,6 +1,6 @@
 [package]
 name = "feedtui"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 description = "A configurable terminal dashboard for stocks, news, sports, and social feeds with a virtual pet companion"
 authors = ["malchal"]
@@ -11,11 +11,23 @@ readme = "README.md"
 keywords = ["tui", "dashboard", "terminal", "rss", "stocks"]
 categories = ["command-line-utilities"]
 
+[lib]
+name = "feedtui"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "feedtui"
+path = "src/main.rs"
+
+[features]
+python = ["pyo3"]
+
 [dependencies]
+pyo3 = { version = "0.22", features = ["extension-module"], optional = true }
 ratatui = "0.29"
 crossterm = "0.28"
 tokio = { version = "1", features = ["full"] }
-reqwest = { version = "0.12", features = ["json"] }
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 toml = "0.8"
