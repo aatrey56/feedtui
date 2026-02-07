@@ -34,6 +34,7 @@ impl ArticleReader {
     }
 
     /// Toggle visibility
+    #[allow(dead_code)]
     pub fn toggle(&mut self) {
         if self.visible {
             self.hide();

@@ -52,6 +52,7 @@ impl Default for Creature {
 }
 
 impl Creature {
+    #[allow(dead_code)]
     pub fn new(name: String, species: CreatureSpecies) -> Self {
         Self {
             name,
@@ -245,7 +246,7 @@ impl Creature {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub enum CreatureSpecies {
     #[default]
-    Blob,    // Friendly slime creature
+    Blob, // Friendly slime creature
     Bird,    // Chirpy bird
     Cat,     // Classic cat companion
     Dragon,  // Mini dragon
@@ -453,6 +454,7 @@ pub enum SkillEffect {
 /// Reward for leveling up
 #[derive(Debug, Clone)]
 pub struct LevelUpReward {
+    #[allow(dead_code)]
     pub level: u32,
     pub points: u32,
     pub unlocked_skills: Vec<String>,
@@ -473,6 +475,7 @@ pub struct Outfit {
 
 /// An emote the creature can perform
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct Emote {
     pub id: String,
     pub name: String,
@@ -708,6 +711,7 @@ pub fn get_all_outfits() -> HashMap<String, Outfit> {
 }
 
 /// Get all available emotes
+#[allow(dead_code)]
 pub fn get_all_emotes() -> HashMap<String, Emote> {
     let mut emotes = HashMap::new();
 

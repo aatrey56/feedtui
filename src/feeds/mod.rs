@@ -42,6 +42,7 @@ pub struct StockQuote {
     pub price: f64,
     pub change: f64,
     pub change_percent: f64,
+    #[allow(dead_code)]
     pub name: String,
 }
 
@@ -62,36 +63,47 @@ pub struct SportsEvent {
     pub home_score: Option<u32>,
     pub away_score: Option<u32>,
     pub status: String,
+    #[allow(dead_code)]
     pub start_time: Option<String>,
 }
 
 #[derive(Debug, Clone)]
 pub struct GithubNotification {
+    #[allow(dead_code)]
     pub id: String,
     pub title: String,
     pub notification_type: String,
     pub repository: String,
+    #[allow(dead_code)]
     pub url: String,
     pub unread: bool,
+    #[allow(dead_code)]
     pub updated_at: String,
     pub reason: String,
 }
 
 #[derive(Debug, Clone)]
 pub struct GithubPullRequest {
+    #[allow(dead_code)]
     pub id: u64,
     pub number: u32,
     pub title: String,
     pub repository: String,
     pub state: String,
     pub author: String,
+    #[allow(dead_code)]
     pub created_at: String,
+    #[allow(dead_code)]
     pub updated_at: String,
     pub draft: bool,
+    #[allow(dead_code)]
     pub mergeable: Option<bool>,
     pub comments: u32,
+    #[allow(dead_code)]
     pub review_comments: u32,
+    #[allow(dead_code)]
     pub additions: u32,
+    #[allow(dead_code)]
     pub deletions: u32,
 }
 
@@ -102,9 +114,13 @@ pub struct GithubCommit {
     pub author: String,
     pub repository: String,
     pub branch: String,
+    #[allow(dead_code)]
     pub timestamp: String,
+    #[allow(dead_code)]
     pub additions: u32,
+    #[allow(dead_code)]
     pub deletions: u32,
+    #[allow(dead_code)]
     pub url: String,
 }
 
@@ -122,6 +138,7 @@ pub struct YoutubeVideo {
     pub channel: String,
     pub published: String,
     pub description: String,
+    #[allow(dead_code)]
     pub thumbnail_url: Option<String>,
     pub view_count: Option<String>,
     pub duration: Option<String>,
