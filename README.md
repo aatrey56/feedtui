@@ -195,6 +195,13 @@ type = "stocks"
 title = "Portfolio"
 symbols = ["AAPL", "GOOGL", "MSFT"]
 position = { row = 1, col = 0 }
+
+#Sports
+[[widgets]]
+type = "sports"
+title = "Sports"
+leagues = ["nba", "nfl", "mlb", "nhl", "epl", "mls", "ncaaf", "ncaab"]
+
 ```
 
 ## Python API
