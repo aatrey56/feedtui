@@ -1,3 +1,4 @@
+pub mod clock;
 pub mod creature;
 pub mod github;
 pub mod hackernews;

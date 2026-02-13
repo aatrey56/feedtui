@@ -45,6 +45,7 @@ pub enum WidgetConfig {
     Creature(CreatureConfig),
     Github(GithubConfig),
     Youtube(YoutubeConfig),
+    Clock(ClockConfig),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -200,6 +201,27 @@ fn default_youtube_title() -> String {
 
 fn default_max_videos() -> usize {
     15
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ClockConfig {
+    #[serde(default = "default_clock_title")]
+    pub title: String,
+    #[serde(default = "default_timezones")]
+    pub timezones: Vec<String>,
+    pub position: Position,
+}
+
+fn default_clock_title() -> String {
+    "World Clock".to_string()
+}
+
+fn default_timezones() -> Vec<String> {
+    vec![
+        "America/New_York".to_string(),
+        "Europe/London".to_string(),
+        "Asia/Tokyo".to_string(),
+    ]
 }
 
 impl Config {
