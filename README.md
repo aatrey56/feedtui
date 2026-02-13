@@ -167,34 +167,254 @@ Outfits unlock as you level up:
 | 30 | Dragon |
 | 50 | Legendary |
 
+## Available Widgets
+
+feedtui supports the following configurable widgets. Each widget can be positioned in a grid layout and customized with various options.
+
+### Creature Widget
+
+Your virtual companion that lives in your terminal and levels up as you use feedtui!
+
+**Configuration:**
+```toml
+[[widgets]]
+type = "creature"
+title = "Tui"                  # Widget title
+show_on_startup = true         # Show creature menu on startup
+position = { row = 0, col = 0 }  # Grid position
+```
+
+**Features:**
+- 10 different species (Blob, Bird, Cat, Dragon, Fox, Owl, Penguin, Robot, Spirit, Octopus)
+- Leveling system with XP progression
+- Unlockable skills and outfits
+- Mood system based on usage
+- Press `t` to open the Tui menu
+
+### Hacker News Widget
+
+Browse Hacker News stories directly in your terminal.
+
+**Configuration:**
+```toml
+[[widgets]]
+type = "hackernews"
+title = "Hacker News"          # Widget title
+story_count = 10               # Number of stories to display (default: 10)
+story_type = "top"             # Story type: "top", "new", or "best" (default: "top")
+position = { row = 0, col = 1 }  # Grid position
+```
+
+**Features:**
+- Browse top, new, or best stories
+- Configurable story count
+- Direct links to discussions
+
+### Stocks Widget
+
+Track your stock portfolio with real-time price updates.
+
+**Configuration:**
+```toml
+[[widgets]]
+type = "stocks"
+title = "Portfolio"            # Widget title
+symbols = ["AAPL", "GOOGL", "MSFT", "NVDA", "TSLA"]  # Stock ticker symbols
+position = { row = 0, col = 2 }  # Grid position
+```
+
+**Features:**
+- Real-time stock price tracking
+- Multiple symbols support
+- Price change indicators
+
+### RSS Widget
+
+Subscribe to your favorite RSS feeds and stay updated with the latest content.
+
+**Configuration:**
+```toml
+[[widgets]]
+type = "rss"
+title = "Tech News"            # Widget title
+feeds = [                      # List of RSS feed URLs
+  "https://feeds.arstechnica.com/arstechnica/technology-lab",
+  "https://www.theverge.com/rss/index.xml"
+]
+max_items = 10                 # Maximum items to display per feed (default: 15)
+position = { row = 1, col = 0 }  # Grid position
+```
+
+**Features:**
+- Multiple RSS feed support
+- Configurable item limit
+- Feed aggregation
+
+### Sports Widget
+
+Follow live scores and updates from major sports leagues.
+
+**Configuration:**
+```toml
+[[widgets]]
+type = "sports"
+title = "Sports"               # Widget title
+leagues = ["nba", "nfl", "mlb", "nhl", "epl", "mls", "ncaaf", "ncaab"]  # Leagues to follow
+position = { row = 1, col = 1 }  # Grid position
+```
+
+**Supported Leagues:**
+- `nba` - NBA Basketball
+- `nfl` - NFL Football
+- `mlb` - Major League Baseball
+- `nhl` - NHL Hockey
+- `epl` or `premier-league` - English Premier League
+- `mls` - Major League Soccer
+- `ncaaf` or `college-football` - College Football
+- `ncaab` or `college-basketball` - College Basketball
+
+**Features:**
+- Live scores and game status
+- Multiple league support
+- Real-time updates powered by ESPN API
+
+### GitHub Widget
+
+Comprehensive GitHub dashboard with notifications, pull requests, and recent commits.
+
+**Configuration:**
+```toml
+[[widgets]]
+type = "github"
+title = "GitHub Dashboard"     # Widget title
+token = "${GITHUB_TOKEN}"      # GitHub personal access token (use env variable)
+username = "your-username"     # Your GitHub username
+show_notifications = true      # Show notifications tab (default: true)
+show_pull_requests = true      # Show pull requests tab (default: true)
+show_commits = true            # Show commits tab (default: true)
+max_notifications = 20         # Max notifications to display (default: 20)
+max_pull_requests = 10         # Max PRs to display (default: 10)
+max_commits = 10               # Max commits to display (default: 10)
+position = { row = 1, col = 2 }  # Grid position
+```
+
+**Setup:**
+1. Create a GitHub personal access token with `notifications` and `repo` scopes
+2. Set environment variable: `export GITHUB_TOKEN=your_token_here`
+3. Use `${GITHUB_TOKEN}` in config to reference the environment variable
+
+**Features:**
+- GitHub notifications feed
+- Pull request tracking
+- Recent commit history
+- Use `h`/`l` or arrow keys to switch between tabs
+
+### YouTube Widget
+
+Display videos from YouTube channels or search queries.
+
+**Configuration:**
+```toml
+[[widgets]]
+type = "youtube"
+title = "YouTube"              # Widget title
+api_key = "${YOUTUBE_API_KEY}" # YouTube Data API v3 key (use env variable)
+channels = ["UCXuqSBlHAE6Xw-yeJA0Tunw"]  # Optional: List of channel IDs
+search_query = "rust programming"  # Optional: Search query for videos
+max_videos = 15                # Maximum videos to display (default: 15)
+position = { row = 2, col = 0 }  # Grid position
+```
+
+**Setup:**
+1. Get a YouTube Data API v3 key from [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+2. Set environment variable: `export YOUTUBE_API_KEY=your_key_here`
+3. Use `${YOUTUBE_API_KEY}` in config to reference the environment variable
+
+**Features:**
+- Display videos from specific channels
+- Search for videos by query
+- Configurable video limit
+- Video titles and metadata
+
 ## Example Config
+
+Here's a complete example showing all available widgets:
 
 ```toml
 [general]
 refresh_interval_secs = 60
 theme = "dark"
 
-# Tui - Your companion creature!
+# Tui - Your companion creature! - top left
+# Press 't' to open the Tui menu and customize your creature
 [[widgets]]
 type = "creature"
 title = "Tui"
 show_on_startup = true
 position = { row = 0, col = 0 }
 
-# Hacker News
+# Hacker News - top middle
 [[widgets]]
 type = "hackernews"
 title = "Hacker News"
 story_count = 10
-story_type = "top"
+story_type = "top"  # top, new, best
 position = { row = 0, col = 1 }
 
-# Stocks
+# Stocks - top right
 [[widgets]]
 type = "stocks"
 title = "Portfolio"
-symbols = ["AAPL", "GOOGL", "MSFT"]
+symbols = ["AAPL", "GOOGL", "MSFT", "NVDA", "TSLA"]
+position = { row = 0, col = 2 }
+
+# Tech News (RSS) - bottom left
+[[widgets]]
+type = "rss"
+title = "Tech News"
+feeds = [
+  "https://feeds.arstechnica.com/arstechnica/technology-lab",
+  "https://www.theverge.com/rss/index.xml"
+]
+max_items = 10
 position = { row = 1, col = 0 }
+
+# Sports - bottom middle
+[[widgets]]
+type = "sports"
+title = "Sports"
+leagues = ["nba", "nfl", "epl"]
+position = { row = 1, col = 1 }
+
+# GitHub Dashboard - bottom right
+# Requires a GitHub personal access token with notifications and repo scope
+# Set environment variable: export GITHUB_TOKEN=your_token_here
+[[widgets]]
+type = "github"
+title = "GitHub Dashboard"
+token = "${GITHUB_TOKEN}"
+username = "your-username"
+show_notifications = true
+show_pull_requests = true
+show_commits = true
+max_notifications = 20
+max_pull_requests = 10
+max_commits = 10
+position = { row = 1, col = 2 }
+
+# YouTube Widget - Optional
+# Display YouTube videos from channels or search queries
+# Requires a YouTube Data API v3 key
+# Get your API key from: https://console.cloud.google.com/apis/credentials
+# Set environment variable: export YOUTUBE_API_KEY=your_key_here
+# [[widgets]]
+# type = "youtube"
+# title = "YouTube"
+# api_key = "${YOUTUBE_API_KEY}"
+# channels = []  # Optional: List of channel IDs to display videos from
+# search_query = "rust programming"  # Optional: Search query for videos
+# max_videos = 15
+# position = { row = 2, col = 0 }
 ```
 
 ## Python API
