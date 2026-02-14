@@ -6,8 +6,9 @@ use crate::feeds::{FeedData, FeedMessage};
 use crate::ui::article_reader::ArticleReader;
 use crate::ui::creature_menu::CreatureMenu;
 use crate::ui::widgets::{
-    creature::CreatureWidget, github::GithubWidget, hackernews::HackernewsWidget, rss::RssWidget,
-    sports::SportsWidget, stocks::StocksWidget, youtube::YoutubeWidget, FeedWidget,
+    creature::CreatureWidget, github::GithubWidget, hackernews::HackernewsWidget,
+    pixelart::PixelArtWidget, rss::RssWidget, sports::SportsWidget, stocks::StocksWidget,
+    youtube::YoutubeWidget, FeedWidget,
 };
 use anyhow::Result;
 use crossterm::{
@@ -63,6 +64,7 @@ impl App {
                 WidgetConfig::Sports(cfg) => Box::new(SportsWidget::new(cfg.clone())),
                 WidgetConfig::Github(cfg) => Box::new(GithubWidget::new(cfg.clone())),
                 WidgetConfig::Youtube(cfg) => Box::new(YoutubeWidget::new(cfg.clone())),
+                WidgetConfig::Pixelart(cfg) => Box::new(PixelArtWidget::new(cfg.clone())),
                 WidgetConfig::Creature(cfg) => {
                     creature_widget_idx = Some(widgets.len());
                     Box::new(CreatureWidget::new(cfg.clone(), creature.clone()))
@@ -218,6 +220,8 @@ impl App {
                     KeyCode::Char('r') => self.refresh_all(),
                     KeyCode::Char('t') => self.toggle_creature_menu(),
                     KeyCode::Char('o') => self.open_selected_in_browser(),
+                    KeyCode::Char('+') | KeyCode::Char('=') => self.handle_pixel_increase(),
+                    KeyCode::Char('-') | KeyCode::Char('_') => self.handle_pixel_decrease(),
                     KeyCode::Enter => self.open_article_reader(),
                     KeyCode::Tab => self.next_widget(),
                     KeyCode::BackTab => self.prev_widget(),
@@ -543,6 +547,34 @@ impl App {
                     if let Err(e) = save_creature(creature_widget.creature(), &self.creature_path) {
                         eprintln!("Warning: Could not save creature state: {}", e);
                     }
+                }
+            }
+        }
+    }
+
+    /// Increase pixel size on selected pixel art widget
+    fn handle_pixel_increase(&mut self) {
+        if !self.widgets.is_empty() {
+            if let Some(widget) = self.widgets.get_mut(self.selected_widget) {
+                if let Some(pixel_art) = widget
+                    .as_any_mut()
+                    .and_then(|w| w.downcast_mut::<PixelArtWidget>())
+                {
+                    pixel_art.increase_pixel_size();
+                }
+            }
+        }
+    }
+
+    /// Decrease pixel size on selected pixel art widget
+    fn handle_pixel_decrease(&mut self) {
+        if !self.widgets.is_empty() {
+            if let Some(widget) = self.widgets.get_mut(self.selected_widget) {
+                if let Some(pixel_art) = widget
+                    .as_any_mut()
+                    .and_then(|w| w.downcast_mut::<PixelArtWidget>())
+                {
+                    pixel_art.decrease_pixel_size();
                 }
             }
         }

@@ -1,6 +1,7 @@
 pub mod creature;
 pub mod github;
 pub mod hackernews;
+pub mod pixelart;
 pub mod rss;
 pub mod sports;
 pub mod stocks;
