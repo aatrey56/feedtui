@@ -7,7 +7,8 @@ use crate::ui::article_reader::ArticleReader;
 use crate::ui::creature_menu::CreatureMenu;
 use crate::ui::widgets::{
     creature::CreatureWidget, github::GithubWidget, hackernews::HackernewsWidget, rss::RssWidget,
-    sports::SportsWidget, stocks::StocksWidget, youtube::YoutubeWidget, FeedWidget,
+    sports::SportsWidget, stocks::StocksWidget, twitter::TwitterWidget, youtube::YoutubeWidget,
+    FeedWidget,
 };
 use anyhow::Result;
 use crossterm::{
@@ -63,6 +64,7 @@ impl App {
                 WidgetConfig::Sports(cfg) => Box::new(SportsWidget::new(cfg.clone())),
                 WidgetConfig::Github(cfg) => Box::new(GithubWidget::new(cfg.clone())),
                 WidgetConfig::Youtube(cfg) => Box::new(YoutubeWidget::new(cfg.clone())),
+                WidgetConfig::Twitter(cfg) => Box::new(TwitterWidget::new(cfg.clone())),
                 WidgetConfig::Creature(cfg) => {
                     creature_widget_idx = Some(widgets.len());
                     Box::new(CreatureWidget::new(cfg.clone(), creature.clone()))
