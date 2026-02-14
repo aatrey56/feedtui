@@ -2,8 +2,7 @@ use crate::config::ClockConfig;
 use crate::feeds::{FeedData, FeedFetcher};
 use crate::ui::widgets::FeedWidget;
 use async_trait::async_trait;
-use chrono::{DateTime, Utc};
-use chrono_tz::Tz;
+use jiff::Timestamp;
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -12,7 +11,6 @@ use ratatui::{
     Frame,
 };
 use std::any::Any;
-use std::str::FromStr;
 use std::time::{Duration, Instant};
 
 #[derive(Debug, Clone)]
@@ -110,7 +108,7 @@ struct ClockFetcher;
 impl FeedFetcher for ClockFetcher {
     async fn fetch(&self) -> anyhow::Result<FeedData> {
         // Clock doesn't need to fetch data
-        Ok(FeedData::Empty)
+        Ok(FeedData::Loading)
     }
 }
 
@@ -194,29 +192,29 @@ impl FeedWidget for Clock {
 
 impl Clock {
     fn render_clocks(&self, frame: &mut Frame, area: Rect) {
-        let now: DateTime<Utc> = Utc::now();
-        let local_tz = chrono_tz::Tz::from_str(
-            chrono_tz::TZ_VARIANTS
-                .iter()
-                .find(|tz| tz.name().contains("America"))
-                .unwrap_or(&chrono_tz::UTC)
-                .name(),
-        )
-        .unwrap_or(chrono_tz::UTC);
+        let now = Timestamp::now();
+
+        // Try to detect local timezone (fallback to UTC if detection fails)
+        let local_tz_name = jiff::tz::TimeZone::system()
+            .iana_name()
+            .unwrap_or("UTC")
+            .to_string();
 
         let mut text_lines = Vec::new();
 
         for timezone_str in &self.timezones {
-            if let Ok(tz) = Tz::from_str(timezone_str) {
-                let time_in_tz = now.with_timezone(&tz);
-                let is_local = tz == local_tz;
+            if let Ok(tz) = jiff::tz::TimeZone::get(timezone_str) {
+                let time_in_tz = now.to_zoned(tz);
+                let is_local = timezone_str == &local_tz_name;
 
-                let time_str = time_in_tz.format("%H:%M:%S").to_string();
-                let date_str = time_in_tz.format("%b %d").to_string();
+                // Format time as HH:MM:SS
+                let time_str = time_in_tz.strftime("%H:%M:%S").to_string();
+                // Format date as MMM DD
+                let date_str = time_in_tz.strftime("%b %d").to_string();
 
                 let tz_name = timezone_str
                     .split('/')
-                    .last()
+                    .next_back()
                     .unwrap_or(timezone_str)
                     .replace('_', " ");
 

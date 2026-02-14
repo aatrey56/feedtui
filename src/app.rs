@@ -7,8 +7,7 @@ use crate::ui::article_reader::ArticleReader;
 use crate::ui::creature_menu::CreatureMenu;
 use crate::ui::widgets::{
     clock::Clock, creature::CreatureWidget, github::GithubWidget, hackernews::HackernewsWidget,
-    rss::RssWidget, sports::SportsWidget, stocks::StocksWidget, youtube::YoutubeWidget,
-    FeedWidget,
+    rss::RssWidget, sports::SportsWidget, stocks::StocksWidget, youtube::YoutubeWidget, FeedWidget,
 };
 use anyhow::Result;
 use crossterm::{
