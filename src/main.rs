@@ -3,6 +3,8 @@ mod config;
 mod creature;
 mod event;
 mod feeds;
+mod twitter_message;
+mod twitter_parser;
 mod ui;
 
 use anyhow::Result;

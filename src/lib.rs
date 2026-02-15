@@ -9,6 +9,8 @@ pub mod config;
 pub mod creature;
 pub mod event;
 pub mod feeds;
+pub mod twitter_message;
+pub mod twitter_parser;
 pub mod ui;
 
 #[cfg(feature = "python")]

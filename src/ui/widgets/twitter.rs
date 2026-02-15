@@ -30,20 +30,15 @@ pub struct TwitterWidget {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-enum TwitterMode {
+pub enum TwitterMode {
     Normal,
     Compose,
     Reply,
     Search,
 }
 
-#[derive(Debug, Clone)]
-struct Tweet {
-    id: String,
-    author: String,
-    text: String,
-    url: Option<String>,
-}
+// Re-export Tweet from twitter_message for backwards compatibility
+pub use crate::twitter_message::Tweet;
 
 #[derive(Debug, Clone)]
 struct TweetDetail {
@@ -118,99 +113,11 @@ impl TwitterWidget {
         }
     }
 
-    pub async fn submit_tweet(&mut self) {
-        if self.compose_text.is_empty() {
-            return;
-        }
-
-        match self.execute_bird_command(&["tweet", &self.compose_text]).await {
-            Ok(output) => {
-                self.status_message = Some(format!("Tweet posted: {}", output));
-                self.close_modal();
-            }
-            Err(e) => {
-                self.status_message = Some(format!("Error: {}", e));
-            }
-        }
-    }
-
-    pub async fn submit_reply(&mut self) {
-        if self.compose_text.is_empty() || self.tweets.is_empty() {
-            return;
-        }
-
-        if let Some(tweet) = self.tweets.get(self.selected_index) {
-            if let Some(url) = &tweet.url {
-                match self
-                    .execute_bird_command(&["reply", url, &self.compose_text])
-                    .await
-                {
-                    Ok(output) => {
-                        self.status_message = Some(format!("Reply posted: {}", output));
-                        self.close_modal();
-                    }
-                    Err(e) => {
-                        self.status_message = Some(format!("Error: {}", e));
-                    }
-                }
-            }
-        }
-    }
-
-    pub async fn submit_search(&mut self) {
-        if self.search_query.is_empty() {
-            return;
-        }
-
-        match self
-            .execute_bird_command(&["search", &self.search_query, "-n", "5"])
-            .await
-        {
-            Ok(output) => {
-                self.parse_search_results(&output);
-                self.close_modal();
-            }
-            Err(e) => {
-                self.status_message = Some(format!("Search error: {}", e));
-            }
-        }
-    }
-
-    pub async fn load_mentions(&mut self) {
-        match self.execute_bird_command(&["mentions", "-n", "5"]).await {
-            Ok(output) => {
-                self.parse_mentions(&output);
-            }
-            Err(e) => {
-                self.status_message = Some(format!("Mentions error: {}", e));
-            }
-        }
-    }
-
-    pub async fn read_selected_tweet(&mut self) {
-        if self.tweets.is_empty() {
-            return;
-        }
-
-        if let Some(tweet) = self.tweets.get(self.selected_index) {
-            if let Some(url) = &tweet.url {
-                match self.execute_bird_command(&["read", url]).await {
-                    Ok(output) => {
-                        self.detail_view = Some(TweetDetail { content: output });
-                    }
-                    Err(e) => {
-                        self.status_message = Some(format!("Read error: {}", e));
-                    }
-                }
-            }
-        }
-    }
-
     pub fn close_detail_view(&mut self) {
         self.detail_view = None;
     }
 
-    async fn execute_bird_command(&self, args: &[&str]) -> anyhow::Result<String> {
+    pub async fn execute_bird_command_static(args: &[&str]) -> anyhow::Result<String> {
         // Check if bird is installed
         let bird_check = Command::new("which")
             .arg("bird")
@@ -250,38 +157,62 @@ impl TwitterWidget {
         }
     }
 
-    fn parse_search_results(&mut self, output: &str) {
-        // Simple parsing - in production, you'd want more robust parsing
-        self.tweets.clear();
-        for (idx, line) in output.lines().enumerate() {
-            if !line.is_empty() {
-                self.tweets.push(Tweet {
-                    id: format!("tweet-{}", idx),
-                    author: "Unknown".to_string(),
-                    text: line.to_string(),
-                    url: None,
-                });
-            }
-        }
-    }
-
-    fn parse_mentions(&mut self, output: &str) {
-        // Simple parsing - in production, you'd want more robust parsing
-        self.tweets.clear();
-        for (idx, line) in output.lines().enumerate() {
-            if !line.is_empty() {
-                self.tweets.push(Tweet {
-                    id: format!("mention-{}", idx),
-                    author: "Unknown".to_string(),
-                    text: line.to_string(),
-                    url: None,
-                });
-            }
-        }
-    }
-
     pub fn is_modal_open(&self) -> bool {
         self.mode != TwitterMode::Normal || self.detail_view.is_some()
+    }
+
+    pub fn get_mode(&self) -> TwitterMode {
+        self.mode.clone()
+    }
+
+    pub fn get_compose_text(&self) -> &str {
+        &self.compose_text
+    }
+
+    pub fn get_search_query(&self) -> &str {
+        &self.search_query
+    }
+
+    pub fn get_selected_tweet_url(&self) -> Option<String> {
+        self.tweets
+            .get(self.selected_index)
+            .and_then(|t| t.url.clone())
+    }
+
+    pub fn handle_async_result(&mut self, data: crate::twitter_message::TwitterData) {
+        use crate::twitter_message::TwitterData;
+
+        match data {
+            TwitterData::TweetPosted(msg) => {
+                self.status_message = Some(msg);
+                self.close_modal();
+            }
+            TwitterData::ReplyPosted(msg) => {
+                self.status_message = Some(msg);
+                self.close_modal();
+            }
+            TwitterData::SearchResults(tweets) => {
+                self.tweets = tweets;
+                self.selected_index = 0;
+                if !self.tweets.is_empty() {
+                    self.list_state.select(Some(0));
+                }
+                self.close_modal();
+            }
+            TwitterData::Mentions(tweets) => {
+                self.tweets = tweets;
+                self.selected_index = 0;
+                if !self.tweets.is_empty() {
+                    self.list_state.select(Some(0));
+                }
+            }
+            TwitterData::TweetDetail(content) => {
+                self.detail_view = Some(TweetDetail { content });
+            }
+            TwitterData::Error(e) => {
+                self.status_message = Some(format!("Error: {}", e));
+            }
+        }
     }
 }
 
@@ -291,7 +222,7 @@ struct TwitterFetcher;
 impl FeedFetcher for TwitterFetcher {
     async fn fetch(&self) -> anyhow::Result<FeedData> {
         // Twitter widget doesn't auto-fetch
-        Ok(FeedData::Empty)
+        Ok(FeedData::Loading)
     }
 }
 
@@ -329,7 +260,9 @@ impl FeedWidget for TwitterWidget {
                 Line::from(""),
                 Line::from(Span::styled(
                     "Twitter/X Feed",
-                    Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+                    Style::default()
+                        .fg(Color::Cyan)
+                        .add_modifier(Modifier::BOLD),
                 )),
                 Line::from(""),
                 Line::from("Keybindings:"),
@@ -445,7 +378,7 @@ impl TwitterWidget {
 
         let text = vec![
             Line::from(""),
-            Line::from(&self.compose_text),
+            Line::from(self.compose_text.as_str()),
             Line::from(""),
             Line::from(Span::styled(
                 "Enter to post | Esc to cancel",
@@ -471,7 +404,7 @@ impl TwitterWidget {
 
         let text = vec![
             Line::from(""),
-            Line::from(&self.compose_text),
+            Line::from(self.compose_text.as_str()),
             Line::from(""),
             Line::from(Span::styled(
                 "Enter to post | Esc to cancel",
