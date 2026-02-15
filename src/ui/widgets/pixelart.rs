@@ -3,7 +3,7 @@ use crate::feeds::{FeedData, FeedFetcher};
 use crate::ui::widgets::FeedWidget;
 use async_trait::async_trait;
 use ratatui::{
-    layout::{Alignment, Constraint, Direction, Layout, Rect},
+    layout::{Alignment, Rect},
     style::{Color, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Paragraph},
@@ -42,16 +42,18 @@ struct PixelColor {
 }
 
 impl PixelColor {
-    fn to_ratatui_color(&self) -> Color {
+    fn to_ratatui_color(self) -> Color {
         Color::Rgb(self.r, self.g, self.b)
     }
 
+    #[allow(dead_code)] // Preserved for future ASCII art mode
     fn grayscale(&self) -> u8 {
         // Standard luminance calculation
         ((0.299 * self.r as f64) + (0.587 * self.g as f64) + (0.114 * self.b as f64)) as u8
     }
 
-    fn to_block_char(&self) -> &'static str {
+    #[allow(dead_code)] // Preserved for future ASCII art mode
+    fn to_block_char(self) -> &'static str {
         let gray = self.grayscale();
         match gray {
             0..=31 => " ",
@@ -69,8 +71,7 @@ impl PixelColor {
 impl PixelArtWidget {
     pub fn new(config: PixelArtConfig) -> Self {
         let pixel_data = if let Some(ref path) = config.image_path {
-            Self::load_image_sync(path, config.pixel_size.unwrap_or(32))
-                .ok()
+            Self::load_image_sync(path, config.pixel_size.unwrap_or(32)).ok()
         } else {
             None
         };
@@ -88,6 +89,7 @@ impl PixelArtWidget {
         }
     }
 
+    #[allow(dead_code)] // Preserved for dynamic image loading
     pub fn set_image_path(&mut self, path: PathBuf) {
         self.image_path = Some(path.clone());
         self.error_message = None;
@@ -150,11 +152,7 @@ impl PixelArtWidget {
         };
 
         // Resize using nearest neighbor for pixel art effect
-        let resized = img.resize_exact(
-            new_width,
-            new_height,
-            image::imageops::FilterType::Nearest,
-        );
+        let resized = img.resize_exact(new_width, new_height, image::imageops::FilterType::Nearest);
 
         // Convert to RGB
         let rgb_img = resized.to_rgb8();
@@ -190,7 +188,7 @@ struct PixelArtFetcher;
 impl FeedFetcher for PixelArtFetcher {
     async fn fetch(&self) -> anyhow::Result<FeedData> {
         // Pixel art widget doesn't fetch data
-        Ok(FeedData::Empty)
+        Ok(FeedData::Loading)
     }
 }
 
@@ -332,9 +330,12 @@ impl PixelArtWidget {
 
         // Calculate visible rows based on available space
         let header_height = 2; // metadata + blank line
-        let max_visible_rows = (area.height.saturating_sub(header_height) as usize).min(data.height as usize);
+        let max_visible_rows =
+            (area.height.saturating_sub(header_height) as usize).min(data.height as usize);
 
-        let start_row = self.scroll_offset.min(data.height.saturating_sub(max_visible_rows as u32) as usize);
+        let start_row = self
+            .scroll_offset
+            .min(data.height.saturating_sub(max_visible_rows as u32) as usize);
         let end_row = (start_row + max_visible_rows).min(data.height as usize);
 
         // Render pixel rows
