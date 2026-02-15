@@ -1,5 +1,6 @@
 #[derive(Debug, Clone)]
 pub struct Tweet {
+    #[allow(dead_code)] // Preserved for future use (e.g., threading, caching)
     pub id: String,
     pub author: String,
     pub text: String,

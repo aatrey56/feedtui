@@ -627,7 +627,10 @@ impl App {
                     .and_then(|w| w.downcast_mut::<TwitterWidget>())
                 {
                     match key.code {
-                        KeyCode::Esc => tw.close_modal(),
+                        KeyCode::Esc => {
+                            tw.close_modal();
+                            tw.close_detail_view();
+                        }
                         KeyCode::Char(c) => tw.add_char(c),
                         KeyCode::Backspace => tw.delete_char(),
                         KeyCode::Enter => {
