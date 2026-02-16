@@ -6,8 +6,8 @@ use crate::feeds::{FeedData, FeedMessage};
 use crate::ui::article_reader::ArticleReader;
 use crate::ui::creature_menu::CreatureMenu;
 use crate::ui::widgets::{
-    creature::CreatureWidget, github::GithubWidget, hackernews::HackernewsWidget, rss::RssWidget,
-    sports::SportsWidget, stocks::StocksWidget, youtube::YoutubeWidget, FeedWidget,
+    clock::Clock, creature::CreatureWidget, github::GithubWidget, hackernews::HackernewsWidget,
+    rss::RssWidget, sports::SportsWidget, stocks::StocksWidget, youtube::YoutubeWidget, FeedWidget,
 };
 use anyhow::Result;
 use crossterm::{
@@ -63,6 +63,7 @@ impl App {
                 WidgetConfig::Sports(cfg) => Box::new(SportsWidget::new(cfg.clone())),
                 WidgetConfig::Github(cfg) => Box::new(GithubWidget::new(cfg.clone())),
                 WidgetConfig::Youtube(cfg) => Box::new(YoutubeWidget::new(cfg.clone())),
+                WidgetConfig::Clock(cfg) => Box::new(Clock::new(cfg.clone())),
                 WidgetConfig::Creature(cfg) => {
                     creature_widget_idx = Some(widgets.len());
                     Box::new(CreatureWidget::new(cfg.clone(), creature.clone()))
@@ -215,7 +216,13 @@ impl App {
                     KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                         self.should_quit = true
                     }
-                    KeyCode::Char('r') => self.refresh_all(),
+                    KeyCode::Char('s') => self.handle_stopwatch_toggle(),
+                    KeyCode::Char('r') => {
+                        // Check if clock widget is selected for reset, otherwise refresh all
+                        if !self.handle_stopwatch_reset() {
+                            self.refresh_all();
+                        }
+                    }
                     KeyCode::Char('t') => self.toggle_creature_menu(),
                     KeyCode::Char('o') => self.open_selected_in_browser(),
                     KeyCode::Enter => self.open_article_reader(),
@@ -444,7 +451,7 @@ impl App {
         (max_row, max_col)
     }
 
-    /// Tick the creature widget for animations and XP
+    /// Tick the creature widget for animations and XP, and update clock widgets
     fn tick_creature(&mut self) {
         if let Some(idx) = self.creature_widget_idx {
             // Tick animation
@@ -462,6 +469,13 @@ impl App {
                         self.last_xp_tick = Instant::now();
                     }
                 }
+            }
+        }
+
+        // Tick all clock widgets for stopwatch updates
+        for widget in &mut self.widgets {
+            if let Some(clock) = widget.as_any_mut().and_then(|w| w.downcast_mut::<Clock>()) {
+                clock.tick_stopwatch();
             }
         }
     }
@@ -546,5 +560,30 @@ impl App {
                 }
             }
         }
+    }
+
+    /// Toggle stopwatch on the selected clock widget
+    fn handle_stopwatch_toggle(&mut self) {
+        if !self.widgets.is_empty() {
+            if let Some(widget) = self.widgets.get_mut(self.selected_widget) {
+                if let Some(clock) = widget.as_any_mut().and_then(|w| w.downcast_mut::<Clock>()) {
+                    clock.toggle_stopwatch();
+                }
+            }
+        }
+    }
+
+    /// Reset stopwatch on the selected clock widget
+    /// Returns true if a clock widget was reset, false otherwise
+    fn handle_stopwatch_reset(&mut self) -> bool {
+        if !self.widgets.is_empty() {
+            if let Some(widget) = self.widgets.get_mut(self.selected_widget) {
+                if let Some(clock) = widget.as_any_mut().and_then(|w| w.downcast_mut::<Clock>()) {
+                    clock.reset_stopwatch();
+                    return true;
+                }
+            }
+        }
+        false
     }
 }
