@@ -46,6 +46,7 @@ pub enum WidgetConfig {
     Github(GithubConfig),
     Youtube(YoutubeConfig),
     Pixelart(PixelArtConfig),
+    Clock(ClockConfig),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -214,6 +215,27 @@ pub struct PixelArtConfig {
 
 fn default_pixelart_title() -> String {
     "Pixel Art".to_string()
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ClockConfig {
+    #[serde(default = "default_clock_title")]
+    pub title: String,
+    #[serde(default = "default_timezones")]
+    pub timezones: Vec<String>,
+    pub position: Position,
+}
+
+fn default_clock_title() -> String {
+    "World Clock".to_string()
+}
+
+fn default_timezones() -> Vec<String> {
+    vec![
+        "America/New_York".to_string(),
+        "Europe/London".to_string(),
+        "Asia/Tokyo".to_string(),
+    ]
 }
 
 impl Config {

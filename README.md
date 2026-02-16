@@ -9,6 +9,7 @@ A configurable terminal dashboard for browsing news, stocks, sports, and more - 
 - **RSS Feeds** - Subscribe to your favorite news sources
 - **Sports Scores** - Follow NBA, NFL, EPL, and more
 - **Pixel Art** - Convert images to beautiful terminal pixel art
+- **World Clock** - Multi-timezone clock with integrated stopwatch
 - **Tui** - Your virtual companion creature that levels up as you use the terminal!
 
 ## Installation
@@ -384,6 +385,43 @@ position = { row = 3, col = 0 }  # Grid position
 - Preview game sprites
 - Terminal art galleries
 - NFT-style pixel aesthetics
+
+### Clock Widget
+
+Multi-timezone world clock with an integrated stopwatch for productivity tracking.
+
+**Configuration:**
+```toml
+[[widgets]]
+type = "clock"
+title = "World Clock"          # Widget title
+timezones = [                  # List of IANA timezone identifiers
+  "America/New_York",
+  "Europe/London",
+  "Asia/Tokyo"
+]
+position = { row = 2, col = 1 }  # Grid position
+```
+
+**Common Timezones:**
+- `America/New_York` - Eastern Time (US)
+- `America/Los_Angeles` - Pacific Time (US)
+- `America/Chicago` - Central Time (US)
+- `Europe/London` - UK Time
+- `Europe/Paris` - Central European Time
+- `Asia/Tokyo` - Japan Time
+- `Asia/Shanghai` - China Time
+- `UTC` - Coordinated Universal Time
+
+**Features:**
+- Multiple timezone support with IANA timezone database
+- Real-time clock updates (every second)
+- Local timezone highlighting
+- Built-in stopwatch with start/pause/reset controls
+- When clock widget is selected:
+  - Press `s` to Start/Pause stopwatch
+  - Press `r` to Reset stopwatch
+- Non-blocking time updates for smooth UI
 
 ## Example Config
 
