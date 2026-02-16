@@ -8,6 +8,7 @@ A configurable terminal dashboard for browsing news, stocks, sports, and more - 
 - **Stock Ticker** - Track your portfolio in real-time
 - **RSS Feeds** - Subscribe to your favorite news sources
 - **Sports Scores** - Follow NBA, NFL, EPL, and more
+- **Twitter/X** - Post, reply, search tweets via Bird CLI integration
 - **Pixel Art** - Convert images to beautiful terminal pixel art
 - **World Clock** - Multi-timezone clock with integrated stopwatch
 - **Tui** - Your virtual companion creature that levels up as you use the terminal!
@@ -337,6 +338,51 @@ position = { row = 2, col = 0 }  # Grid position
 - Search for videos by query
 - Configurable video limit
 - Video titles and metadata
+
+### Twitter/X Widget
+
+Interactive Twitter/X feed powered by [Bird CLI](https://github.com/xrehpicx/bird) for posting, replying, searching, and reading tweets directly from your terminal.
+
+**Prerequisites:**
+- Bird CLI installed: `bun install -g bird-cli`
+- Twitter/X authentication tokens set as environment variables:
+  - `CT0` - Cookie token from twitter.com
+  - `AUTH_TOKEN` - Authentication token from twitter.com
+
+**Configuration:**
+```toml
+[[widgets]]
+type = "twitter"
+title = "Twitter/X"             # Widget title
+position = { row = 2, col = 2 }  # Grid position
+```
+
+**Setup:**
+1. Install Bird CLI: `bun install -g bird-cli`
+2. Extract cookies from twitter.com (use browser dev tools):
+   - `CT0` cookie value
+   - `auth_token` cookie value
+3. Set environment variables:
+```bash
+export CT0="your_ct0_token"
+export AUTH_TOKEN="your_auth_token"
+```
+
+**Features:**
+- Tweet composition with modal interface
+- Reply to tweets
+- Search Twitter/X
+- View mentions
+- Read individual tweets and threads
+- When Twitter widget is selected:
+  - Press `t` to compose a new tweet
+  - Press `r` to reply to selected tweet
+  - Press `/` to open search
+  - Press `m` to load mentions
+  - Press `Enter` to read selected tweet
+  - Press `Esc` to close modals
+
+**Note:** This widget requires external authentication and Bird CLI to be properly configured.
 
 ### Pixel Art Widget
 

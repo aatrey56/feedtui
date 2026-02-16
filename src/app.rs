@@ -3,12 +3,14 @@ use crate::creature::persistence::{default_creature_path, load_or_create_creatur
 use crate::creature::Creature;
 use crate::event::{Event, EventHandler};
 use crate::feeds::{FeedData, FeedMessage};
+use crate::twitter_message::{TwitterData, TwitterMessage};
+use crate::twitter_parser;
 use crate::ui::article_reader::ArticleReader;
 use crate::ui::creature_menu::CreatureMenu;
 use crate::ui::widgets::{
     clock::Clock, creature::CreatureWidget, github::GithubWidget, hackernews::HackernewsWidget,
     pixelart::PixelArtWidget, rss::RssWidget, sports::SportsWidget, stocks::StocksWidget,
-    youtube::YoutubeWidget, FeedWidget,
+    twitter::TwitterWidget, youtube::YoutubeWidget, FeedWidget,
 };
 use anyhow::Result;
 use crossterm::{
@@ -34,6 +36,8 @@ pub struct App {
     should_quit: bool,
     feed_rx: mpsc::UnboundedReceiver<FeedMessage>,
     feed_tx: mpsc::UnboundedSender<FeedMessage>,
+    twitter_rx: mpsc::UnboundedReceiver<TwitterMessage>,
+    twitter_tx: mpsc::UnboundedSender<TwitterMessage>,
     creature_path: PathBuf,
     creature_widget_idx: Option<usize>,
     last_xp_tick: Instant,
@@ -45,6 +49,7 @@ pub struct App {
 impl App {
     pub fn new(config: Config) -> Self {
         let (feed_tx, feed_rx) = mpsc::unbounded_channel();
+        let (twitter_tx, twitter_rx) = mpsc::unbounded_channel();
 
         // Load or create creature
         let creature_path = default_creature_path();
@@ -64,6 +69,7 @@ impl App {
                 WidgetConfig::Sports(cfg) => Box::new(SportsWidget::new(cfg.clone())),
                 WidgetConfig::Github(cfg) => Box::new(GithubWidget::new(cfg.clone())),
                 WidgetConfig::Youtube(cfg) => Box::new(YoutubeWidget::new(cfg.clone())),
+                WidgetConfig::Twitter(cfg) => Box::new(TwitterWidget::new(cfg.clone())),
                 WidgetConfig::Pixelart(cfg) => Box::new(PixelArtWidget::new(cfg.clone())),
                 WidgetConfig::Clock(cfg) => Box::new(Clock::new(cfg.clone())),
                 WidgetConfig::Creature(cfg) => {
@@ -81,6 +87,8 @@ impl App {
             should_quit: false,
             feed_rx,
             feed_tx,
+            twitter_rx,
+            twitter_tx,
             creature_path,
             creature_widget_idx,
             last_xp_tick: Instant::now(),
@@ -114,6 +122,7 @@ impl App {
 
             // Clear expired status messages
             self.clear_expired_status();
+            self.tick_twitter_widgets();
 
             // Draw UI
             terminal.draw(|frame| self.render(frame))?;
@@ -127,6 +136,9 @@ impl App {
                 }
                 Some(msg) = self.feed_rx.recv() => {
                     self.handle_feed_message(msg);
+                }
+                Some(msg) = self.twitter_rx.recv() => {
+                    self.handle_twitter_message(msg);
                 }
             }
         }
@@ -180,6 +192,12 @@ impl App {
                     return;
                 }
 
+                // If Twitter modal is open, route events there
+                if self.has_twitter_modal_open() {
+                    self.handle_twitter_modal_event(key);
+                    return;
+                }
+
                 // If creature menu is visible, route events there
                 if self.creature_menu.visible {
                     match key.code {
@@ -220,16 +238,33 @@ impl App {
                     }
                     KeyCode::Char('s') => self.handle_stopwatch_toggle(),
                     KeyCode::Char('r') => {
-                        // Check if clock widget is selected for reset, otherwise refresh all
-                        if !self.handle_stopwatch_reset() {
+                        if self.is_twitter_selected() {
+                            self.twitter_open_reply();
+                        } else if !self.handle_stopwatch_reset() {
                             self.refresh_all();
                         }
                     }
-                    KeyCode::Char('t') => self.toggle_creature_menu(),
+                    KeyCode::Char('t') => {
+                        if self.is_twitter_selected() {
+                            self.twitter_open_compose();
+                        } else {
+                            self.toggle_creature_menu();
+                        }
+                    }
+                    KeyCode::Char('/') if self.is_twitter_selected() => self.twitter_open_search(),
+                    KeyCode::Char('m') if self.is_twitter_selected() => {
+                        self.twitter_load_mentions()
+                    }
                     KeyCode::Char('o') => self.open_selected_in_browser(),
                     KeyCode::Char('+') | KeyCode::Char('=') => self.handle_pixel_increase(),
                     KeyCode::Char('-') | KeyCode::Char('_') => self.handle_pixel_decrease(),
-                    KeyCode::Enter => self.open_article_reader(),
+                    KeyCode::Enter => {
+                        if self.is_twitter_selected() {
+                            self.twitter_read_tweet();
+                        } else {
+                            self.open_article_reader();
+                        }
+                    }
                     KeyCode::Tab => self.next_widget(),
                     KeyCode::BackTab => self.prev_widget(),
                     KeyCode::Down | KeyCode::Char('j') => self.scroll_down(),
@@ -562,6 +597,256 @@ impl App {
                         eprintln!("Warning: Could not save creature state: {}", e);
                     }
                 }
+            }
+        }
+    }
+
+    // Twitter widget helper methods
+
+    fn tick_twitter_widgets(&mut self) {
+        for widget in &mut self.widgets {
+            if let Some(tw) = widget
+                .as_any_mut()
+                .and_then(|w| w.downcast_mut::<TwitterWidget>())
+            {
+                tw.clear_expired_status();
+            }
+        }
+    }
+
+    fn has_twitter_modal_open(&self) -> bool {
+        for widget in &self.widgets {
+            if let Some(tw) = widget
+                .as_any()
+                .and_then(|w| w.downcast_ref::<TwitterWidget>())
+            {
+                if tw.is_modal_open() {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
+    fn handle_twitter_modal_event(&mut self, key: crossterm::event::KeyEvent) {
+        // Find the widget with an open modal first
+        let mut widget_idx = None;
+        for (idx, widget) in self.widgets.iter().enumerate() {
+            if let Some(tw) = widget
+                .as_any()
+                .and_then(|w| w.downcast_ref::<TwitterWidget>())
+            {
+                if tw.is_modal_open() {
+                    widget_idx = Some(idx);
+                    break;
+                }
+            }
+        }
+
+        // Handle the event for that widget
+        if let Some(idx) = widget_idx {
+            if let Some(widget) = self.widgets.get_mut(idx) {
+                if let Some(tw) = widget
+                    .as_any_mut()
+                    .and_then(|w| w.downcast_mut::<TwitterWidget>())
+                {
+                    match key.code {
+                        KeyCode::Esc => {
+                            tw.close_modal();
+                            tw.close_detail_view();
+                        }
+                        KeyCode::Char(c) => tw.add_char(c),
+                        KeyCode::Backspace => tw.delete_char(),
+                        KeyCode::Enter => {
+                            // Extract data needed for spawning command
+                            let widget_id = tw.id();
+                            let mode = tw.get_mode();
+                            let compose_text = tw.get_compose_text().to_string();
+                            let search_query = tw.get_search_query().to_string();
+                            let tweet_url = tw.get_selected_tweet_url();
+
+                            // Spawn the command
+                            self.spawn_twitter_command_with_data(
+                                widget_id,
+                                mode,
+                                compose_text,
+                                search_query,
+                                tweet_url,
+                            );
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        }
+    }
+
+    fn is_twitter_selected(&self) -> bool {
+        if let Some(widget) = self.widgets.get(self.selected_widget) {
+            widget
+                .as_any()
+                .and_then(|w| w.downcast_ref::<TwitterWidget>())
+                .is_some()
+        } else {
+            false
+        }
+    }
+
+    fn twitter_open_compose(&mut self) {
+        if let Some(widget) = self.widgets.get_mut(self.selected_widget) {
+            if let Some(tw) = widget
+                .as_any_mut()
+                .and_then(|w| w.downcast_mut::<TwitterWidget>())
+            {
+                tw.open_compose();
+            }
+        }
+    }
+
+    fn twitter_open_reply(&mut self) {
+        if let Some(widget) = self.widgets.get_mut(self.selected_widget) {
+            if let Some(tw) = widget
+                .as_any_mut()
+                .and_then(|w| w.downcast_mut::<TwitterWidget>())
+            {
+                tw.open_reply();
+            }
+        }
+    }
+
+    fn twitter_open_search(&mut self) {
+        if let Some(widget) = self.widgets.get_mut(self.selected_widget) {
+            if let Some(tw) = widget
+                .as_any_mut()
+                .and_then(|w| w.downcast_mut::<TwitterWidget>())
+            {
+                tw.open_search();
+            }
+        }
+    }
+
+    fn twitter_load_mentions(&mut self) {
+        if let Some(widget) = self.widgets.get(self.selected_widget) {
+            let tx = self.twitter_tx.clone();
+            let widget_id = widget.id();
+
+            tokio::spawn(async move {
+                let result =
+                    TwitterWidget::execute_bird_command_static(&["mentions", "--json", "-n", "5"])
+                        .await;
+                let data = match result {
+                    Ok(output) => TwitterData::Mentions(twitter_parser::parse_json_tweets(&output)),
+                    Err(e) => TwitterData::Error(e.to_string()),
+                };
+                let _ = tx.send(TwitterMessage { widget_id, data });
+            });
+        }
+    }
+
+    fn twitter_read_tweet(&mut self) {
+        if let Some(widget) = self.widgets.get(self.selected_widget) {
+            if let Some(tw) = widget
+                .as_any()
+                .and_then(|w| w.downcast_ref::<TwitterWidget>())
+            {
+                if let Some(url) = tw.get_selected_tweet_url() {
+                    let tx = self.twitter_tx.clone();
+                    let widget_id = widget.id();
+
+                    tokio::spawn(async move {
+                        let result =
+                            TwitterWidget::execute_bird_command_static(&["read", "--plain", &url])
+                                .await;
+                        let data = match result {
+                            Ok(output) => TwitterData::TweetDetail(output),
+                            Err(e) => TwitterData::Error(e.to_string()),
+                        };
+                        let _ = tx.send(TwitterMessage { widget_id, data });
+                    });
+                }
+            }
+        }
+    }
+
+    fn spawn_twitter_command_with_data(
+        &mut self,
+        widget_id: String,
+        mode: crate::ui::widgets::twitter::TwitterMode,
+        compose_text: String,
+        search_query: String,
+        tweet_url: Option<String>,
+    ) {
+        use crate::ui::widgets::twitter::TwitterMode;
+
+        let tx = self.twitter_tx.clone();
+
+        match mode {
+            TwitterMode::Compose => {
+                tokio::spawn(async move {
+                    let result = TwitterWidget::execute_bird_command_static(&[
+                        "tweet",
+                        "--plain",
+                        &compose_text,
+                    ])
+                    .await;
+                    let data = match result {
+                        Ok(output) => TwitterData::TweetPosted(output),
+                        Err(e) => TwitterData::Error(e.to_string()),
+                    };
+                    let _ = tx.send(TwitterMessage { widget_id, data });
+                });
+            }
+            TwitterMode::Reply => {
+                if let Some(url) = tweet_url {
+                    tokio::spawn(async move {
+                        let result = TwitterWidget::execute_bird_command_static(&[
+                            "reply",
+                            "--plain",
+                            &url,
+                            &compose_text,
+                        ])
+                        .await;
+                        let data = match result {
+                            Ok(output) => TwitterData::ReplyPosted(output),
+                            Err(e) => TwitterData::Error(e.to_string()),
+                        };
+                        let _ = tx.send(TwitterMessage { widget_id, data });
+                    });
+                }
+            }
+            TwitterMode::Search => {
+                tokio::spawn(async move {
+                    let result = TwitterWidget::execute_bird_command_static(&[
+                        "search",
+                        "--json",
+                        "-n",
+                        "5",
+                        &search_query,
+                    ])
+                    .await;
+                    let data = match result {
+                        Ok(output) => {
+                            TwitterData::SearchResults(twitter_parser::parse_json_tweets(&output))
+                        }
+                        Err(e) => TwitterData::Error(e.to_string()),
+                    };
+                    let _ = tx.send(TwitterMessage { widget_id, data });
+                });
+            }
+            _ => {}
+        }
+    }
+
+    fn handle_twitter_message(&mut self, msg: TwitterMessage) {
+        for widget in &mut self.widgets {
+            if widget.id() == msg.widget_id {
+                if let Some(tw) = widget
+                    .as_any_mut()
+                    .and_then(|w| w.downcast_mut::<TwitterWidget>())
+                {
+                    tw.handle_async_result(msg.data);
+                }
+                break;
             }
         }
     }

@@ -45,6 +45,7 @@ pub enum WidgetConfig {
     Creature(CreatureConfig),
     Github(GithubConfig),
     Youtube(YoutubeConfig),
+    Twitter(TwitterConfig),
     Pixelart(PixelArtConfig),
     Clock(ClockConfig),
 }
@@ -202,6 +203,17 @@ fn default_youtube_title() -> String {
 
 fn default_max_videos() -> usize {
     15
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TwitterConfig {
+    #[serde(default = "default_twitter_title")]
+    pub title: String,
+    pub position: Position,
+}
+
+fn default_twitter_title() -> String {
+    "Twitter/X".to_string()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
