@@ -1,6 +1,6 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -45,6 +45,7 @@ pub enum WidgetConfig {
     Creature(CreatureConfig),
     Github(GithubConfig),
     Youtube(YoutubeConfig),
+    Pixelart(PixelArtConfig),
     Clock(ClockConfig),
 }
 
@@ -201,6 +202,19 @@ fn default_youtube_title() -> String {
 
 fn default_max_videos() -> usize {
     15
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PixelArtConfig {
+    #[serde(default = "default_pixelart_title")]
+    pub title: String,
+    pub image_path: Option<PathBuf>,
+    pub pixel_size: Option<u32>,
+    pub position: Position,
+}
+
+fn default_pixelart_title() -> String {
+    "Pixel Art".to_string()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

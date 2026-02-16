@@ -8,6 +8,7 @@ A configurable terminal dashboard for browsing news, stocks, sports, and more - 
 - **Stock Ticker** - Track your portfolio in real-time
 - **RSS Feeds** - Subscribe to your favorite news sources
 - **Sports Scores** - Follow NBA, NFL, EPL, and more
+- **Pixel Art** - Convert images to beautiful terminal pixel art
 - **World Clock** - Multi-timezone clock with integrated stopwatch
 - **Tui** - Your virtual companion creature that levels up as you use the terminal!
 
@@ -336,6 +337,54 @@ position = { row = 2, col = 0 }  # Grid position
 - Search for videos by query
 - Configurable video limit
 - Video titles and metadata
+
+### Pixel Art Widget
+
+Convert images into beautiful terminal-rendered pixel art. Supports PNG, JPEG, and WebP formats with adjustable pixel resolution.
+
+**Configuration:**
+```toml
+[[widgets]]
+type = "pixelart"
+title = "Pixel Art"             # Widget title
+image_path = "/path/to/image.png"  # Path to image file (optional)
+pixel_size = 32                 # Target pixel resolution (optional, default: 32)
+position = { row = 3, col = 0 }  # Grid position
+```
+
+**Supported Image Formats:**
+- PNG
+- JPEG
+- WebP
+
+**Features:**
+- Image-to-pixel art conversion with nearest-neighbor scaling
+- Adjustable pixel resolution (8×8 to 128×128)
+- True color terminal rendering (24-bit RGB)
+- Aspect ratio preservation
+- Scrollable output for large images
+- Real-time pixel size adjustment
+
+**Usage:**
+1. Configure `image_path` in your config.toml
+2. Select the widget with Tab
+3. Use keybindings to interact:
+   - Press `+` to increase pixel size (8 → 16 → 32 → 64 → 128)
+   - Press `-` to decrease pixel size (128 → 64 → 32 → 16 → 8)
+   - Use `↑↓` or `j`/`k` to scroll through large images
+
+**Display Information:**
+- Original image dimensions
+- Pixelated dimensions
+- Current pixel size setting
+- Scroll indicator when image exceeds viewport
+
+**Example Use Cases:**
+- Display profile pictures as pixel art
+- Create retro-style avatars
+- Preview game sprites
+- Terminal art galleries
+- NFT-style pixel aesthetics
 
 ### Clock Widget
 
