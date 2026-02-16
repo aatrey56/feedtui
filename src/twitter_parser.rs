@@ -1,82 +1,51 @@
 use crate::twitter_message::Tweet;
+use serde::Deserialize;
 
-/// Parse Bird CLI search results output into Tweet structs
-/// Expected format:
-/// @username: Tweet text
-/// URL: https://twitter.com/...
-/// ---
-pub fn parse_search_results(output: &str) -> Vec<Tweet> {
-    let mut tweets = Vec::new();
-    let mut current_tweet: Option<(String, String, String)> = None; // (author, text, url)
-
-    for line in output.lines() {
-        let line = line.trim();
-
-        if line.starts_with('@') {
-            // Finalize previous tweet if exists
-            if let Some((author, text, url)) = current_tweet.take() {
-                if !url.is_empty() {
-                    tweets.push(Tweet {
-                        id: url.clone(),
-                        author,
-                        text,
-                        url: Some(url),
-                    });
-                }
-            }
-
-            // Start new tweet
-            if let Some((author, text)) = line.split_once(':') {
-                current_tweet = Some((
-                    author.trim_start_matches('@').to_string(),
-                    text.trim().to_string(),
-                    String::new(),
-                ));
-            }
-        } else if line.starts_with("URL:") || line.starts_with("http") {
-            if let Some((author, text, _)) = current_tweet.as_mut() {
-                let url = line.trim_start_matches("URL:").trim();
-                current_tweet = Some((author.clone(), text.clone(), url.to_string()));
-            }
-        } else if line == "---" || line.is_empty() {
-            // Separator - finalize current tweet
-            if let Some((author, text, url)) = current_tweet.take() {
-                if !url.is_empty() {
-                    tweets.push(Tweet {
-                        id: url.clone(),
-                        author,
-                        text,
-                        url: Some(url),
-                    });
-                }
-            }
-        } else if let Some((_, text, _)) = current_tweet.as_mut() {
-            // Continuation of tweet text
-            if !text.is_empty() {
-                text.push(' ');
-            }
-            text.push_str(line);
-        }
-    }
-
-    // Finalize last tweet
-    if let Some((author, text, url)) = current_tweet {
-        if !url.is_empty() {
-            tweets.push(Tweet {
-                id: url.clone(),
-                author,
-                text,
-                url: Some(url),
-            });
-        }
-    }
-
-    tweets
+/// Bird CLI JSON output structure for a tweet
+#[derive(Debug, Deserialize)]
+struct BirdTweet {
+    id: String,
+    text: String,
+    author: Option<BirdAuthor>,
+    #[serde(rename = "authorId")]
+    author_id: Option<String>,
 }
 
-/// Parse Bird CLI mentions output (same format as search results)
-pub fn parse_mentions(output: &str) -> Vec<Tweet> {
-    parse_search_results(output)
+#[derive(Debug, Deserialize)]
+struct BirdAuthor {
+    username: String,
+    #[allow(dead_code)]
+    name: Option<String>,
+}
+
+/// Parse Bird CLI `--json` output into Tweet structs.
+/// Bird outputs a JSON array of tweet objects.
+pub fn parse_json_tweets(output: &str) -> Vec<Tweet> {
+    let trimmed = output.trim();
+    if trimmed.is_empty() {
+        return Vec::new();
+    }
+
+    match serde_json::from_str::<Vec<BirdTweet>>(trimmed) {
+        Ok(bird_tweets) => bird_tweets
+            .into_iter()
+            .map(|bt| {
+                let username = bt
+                    .author
+                    .as_ref()
+                    .map(|a| a.username.clone())
+                    .unwrap_or_else(|| bt.author_id.clone().unwrap_or_else(|| "unknown".into()));
+                let url = format!("https://x.com/{}/status/{}", username, bt.id);
+                Tweet {
+                    id: bt.id,
+                    author: username,
+                    text: bt.text.replace('\n', " "),
+                    url: Some(url),
+                }
+            })
+            .collect(),
+        Err(_) => Vec::new(),
+    }
 }
 
 #[cfg(test)]
@@ -84,26 +53,54 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_search_results() {
-        let input = "@user1: This is a tweet\nURL: https://twitter.com/user1/status/123\n---\n@user2: Another tweet\nURL: https://twitter.com/user2/status/456";
-        let tweets = parse_search_results(input);
+    fn test_parse_json_tweets() {
+        let input = r#"[
+            {
+                "id": "123456",
+                "text": "Hello world",
+                "createdAt": "Mon Feb 16 12:00:00 +0000 2026",
+                "author": {
+                    "username": "testuser",
+                    "name": "Test User"
+                },
+                "authorId": "789"
+            },
+            {
+                "id": "654321",
+                "text": "Another tweet\nwith newlines",
+                "author": {
+                    "username": "other",
+                    "name": "Other User"
+                }
+            }
+        ]"#;
+        let tweets = parse_json_tweets(input);
         assert_eq!(tweets.len(), 2);
-        assert_eq!(tweets[0].author, "user1");
-        assert_eq!(tweets[0].text, "This is a tweet");
+        assert_eq!(tweets[0].id, "123456");
+        assert_eq!(tweets[0].author, "testuser");
+        assert_eq!(tweets[0].text, "Hello world");
         assert_eq!(
             tweets[0].url,
-            Some("https://twitter.com/user1/status/123".to_string())
+            Some("https://x.com/testuser/status/123456".to_string())
         );
+        assert_eq!(tweets[1].text, "Another tweet with newlines");
     }
 
     #[test]
-    fn test_parse_multiline_tweet() {
-        let input = "@user1: This is a long tweet\nthat spans multiple lines\nURL: https://twitter.com/user1/status/123";
-        let tweets = parse_search_results(input);
-        assert_eq!(tweets.len(), 1);
-        assert_eq!(
-            tweets[0].text,
-            "This is a long tweet that spans multiple lines"
-        );
+    fn test_parse_empty_array() {
+        let tweets = parse_json_tweets("[]");
+        assert!(tweets.is_empty());
+    }
+
+    #[test]
+    fn test_parse_empty_string() {
+        let tweets = parse_json_tweets("");
+        assert!(tweets.is_empty());
+    }
+
+    #[test]
+    fn test_parse_invalid_json() {
+        let tweets = parse_json_tweets("not json at all");
+        assert!(tweets.is_empty());
     }
 }

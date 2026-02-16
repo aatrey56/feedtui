@@ -120,6 +120,7 @@ impl App {
 
             // Clear expired status messages
             self.clear_expired_status();
+            self.tick_twitter_widgets();
 
             // Draw UI
             terminal.draw(|frame| self.render(frame))?;
@@ -590,6 +591,17 @@ impl App {
 
     // Twitter widget helper methods
 
+    fn tick_twitter_widgets(&mut self) {
+        for widget in &mut self.widgets {
+            if let Some(tw) = widget
+                .as_any_mut()
+                .and_then(|w| w.downcast_mut::<TwitterWidget>())
+            {
+                tw.clear_expired_status();
+            }
+        }
+    }
+
     fn has_twitter_modal_open(&self) -> bool {
         for widget in &self.widgets {
             if let Some(tw) = widget
@@ -708,9 +720,10 @@ impl App {
 
             tokio::spawn(async move {
                 let result =
-                    TwitterWidget::execute_bird_command_static(&["mentions", "-n", "5"]).await;
+                    TwitterWidget::execute_bird_command_static(&["mentions", "--json", "-n", "5"])
+                        .await;
                 let data = match result {
-                    Ok(output) => TwitterData::Mentions(twitter_parser::parse_mentions(&output)),
+                    Ok(output) => TwitterData::Mentions(twitter_parser::parse_json_tweets(&output)),
                     Err(e) => TwitterData::Error(e.to_string()),
                 };
                 let _ = tx.send(TwitterMessage { widget_id, data });
@@ -730,7 +743,8 @@ impl App {
 
                     tokio::spawn(async move {
                         let result =
-                            TwitterWidget::execute_bird_command_static(&["read", &url]).await;
+                            TwitterWidget::execute_bird_command_static(&["read", "--plain", &url])
+                                .await;
                         let data = match result {
                             Ok(output) => TwitterData::TweetDetail(output),
                             Err(e) => TwitterData::Error(e.to_string()),
@@ -757,8 +771,12 @@ impl App {
         match mode {
             TwitterMode::Compose => {
                 tokio::spawn(async move {
-                    let result =
-                        TwitterWidget::execute_bird_command_static(&["tweet", &compose_text]).await;
+                    let result = TwitterWidget::execute_bird_command_static(&[
+                        "tweet",
+                        "--plain",
+                        &compose_text,
+                    ])
+                    .await;
                     let data = match result {
                         Ok(output) => TwitterData::TweetPosted(output),
                         Err(e) => TwitterData::Error(e.to_string()),
@@ -771,6 +789,7 @@ impl App {
                     tokio::spawn(async move {
                         let result = TwitterWidget::execute_bird_command_static(&[
                             "reply",
+                            "--plain",
                             &url,
                             &compose_text,
                         ])
@@ -787,15 +806,16 @@ impl App {
                 tokio::spawn(async move {
                     let result = TwitterWidget::execute_bird_command_static(&[
                         "search",
-                        &search_query,
+                        "--json",
                         "-n",
                         "5",
+                        &search_query,
                     ])
                     .await;
                     let data = match result {
-                        Ok(output) => TwitterData::SearchResults(
-                            twitter_parser::parse_search_results(&output),
-                        ),
+                        Ok(output) => {
+                            TwitterData::SearchResults(twitter_parser::parse_json_tweets(&output))
+                        }
                         Err(e) => TwitterData::Error(e.to_string()),
                     };
                     let _ = tx.send(TwitterMessage { widget_id, data });

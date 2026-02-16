@@ -11,6 +11,7 @@ use ratatui::{
 };
 use std::any::Any;
 use std::process::Stdio;
+use std::time::Instant;
 use tokio::process::Command;
 
 #[derive(Debug, Clone)]
@@ -26,7 +27,7 @@ pub struct TwitterWidget {
     compose_text: String,
     search_query: String,
     detail_view: Option<TweetDetail>,
-    status_message: Option<String>,
+    status_message: Option<(String, Instant)>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -118,42 +119,48 @@ impl TwitterWidget {
     }
 
     pub async fn execute_bird_command_static(args: &[&str]) -> anyhow::Result<String> {
-        // Check if bird is installed
-        let bird_check = Command::new("which")
-            .arg("bird")
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .status()
-            .await;
-
-        if bird_check.is_err() || !bird_check.unwrap().success() {
-            return Err(anyhow::anyhow!(
-                "Bird CLI not found. Install with: bun install -g bird-cli"
-            ));
-        }
-
         // Check for environment variables
-        if std::env::var("CT0").is_err() || std::env::var("AUTH_TOKEN").is_err() {
-            return Err(anyhow::anyhow!(
-                "Missing CT0 or AUTH_TOKEN environment variables"
-            ));
-        }
+        let ct0 = std::env::var("CT0").map_err(|_| {
+            anyhow::anyhow!("Missing CT0 environment variable. Export it before running feedtui.")
+        })?;
+        let auth_token = std::env::var("AUTH_TOKEN").map_err(|_| {
+            anyhow::anyhow!(
+                "Missing AUTH_TOKEN environment variable. Export it before running feedtui."
+            )
+        })?;
 
-        // Execute bird command
+        // Build command with explicit auth flags
         let output = Command::new("bird")
+            .arg("--auth-token")
+            .arg(&auth_token)
+            .arg("--ct0")
+            .arg(&ct0)
             .args(args)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .output()
-            .await?;
+            .await
+            .map_err(|e| {
+                if e.kind() == std::io::ErrorKind::NotFound {
+                    anyhow::anyhow!(
+                        "Bird CLI not found. Install with: bun install -g @steipete/bird"
+                    )
+                } else {
+                    anyhow::anyhow!("Failed to run bird: {}", e)
+                }
+            })?;
 
         if output.status.success() {
             Ok(String::from_utf8_lossy(&output.stdout).to_string())
         } else {
-            Err(anyhow::anyhow!(
-                "Bird command failed: {}",
-                String::from_utf8_lossy(&output.stderr)
-            ))
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let msg = if stderr.is_empty() {
+                stdout.to_string()
+            } else {
+                stderr.to_string()
+            };
+            Err(anyhow::anyhow!("Bird command failed: {}", msg.trim()))
         }
     }
 
@@ -179,19 +186,37 @@ impl TwitterWidget {
             .and_then(|t| t.url.clone())
     }
 
+    fn set_status(&mut self, msg: String) {
+        self.status_message = Some((msg, Instant::now()));
+    }
+
+    /// Clear status message after 5 seconds
+    pub fn clear_expired_status(&mut self) {
+        if let Some((_, time)) = &self.status_message {
+            if time.elapsed().as_secs() >= 5 {
+                self.status_message = None;
+            }
+        }
+    }
+
     pub fn handle_async_result(&mut self, data: crate::twitter_message::TwitterData) {
         use crate::twitter_message::TwitterData;
 
         match data {
             TwitterData::TweetPosted(msg) => {
-                self.status_message = Some(msg);
+                self.set_status(format!("Tweet posted: {}", msg.trim()));
                 self.close_modal();
             }
             TwitterData::ReplyPosted(msg) => {
-                self.status_message = Some(msg);
+                self.set_status(format!("Reply posted: {}", msg.trim()));
                 self.close_modal();
             }
             TwitterData::SearchResults(tweets) => {
+                if tweets.is_empty() {
+                    self.set_status("No results found".into());
+                } else {
+                    self.set_status(format!("Found {} tweets", tweets.len()));
+                }
                 self.tweets = tweets;
                 self.selected_index = 0;
                 if !self.tweets.is_empty() {
@@ -200,6 +225,11 @@ impl TwitterWidget {
                 self.close_modal();
             }
             TwitterData::Mentions(tweets) => {
+                if tweets.is_empty() {
+                    self.set_status("No mentions found".into());
+                } else {
+                    self.set_status(format!("Loaded {} mentions", tweets.len()));
+                }
                 self.tweets = tweets;
                 self.selected_index = 0;
                 if !self.tweets.is_empty() {
@@ -210,7 +240,8 @@ impl TwitterWidget {
                 self.detail_view = Some(TweetDetail { content });
             }
             TwitterData::Error(e) => {
-                self.status_message = Some(format!("Error: {}", e));
+                self.set_status(format!("Error: {}", e));
+                self.close_modal();
             }
         }
     }
@@ -316,9 +347,11 @@ impl FeedWidget for TwitterWidget {
             self.render_detail_view(frame, area, detail);
         }
 
-        // Render status message if present
-        if let Some(msg) = &self.status_message {
-            self.render_status(frame, area, msg);
+        // Render status message if present and not expired
+        if let Some((msg, time)) = &self.status_message {
+            if time.elapsed().as_secs() < 5 {
+                self.render_status(frame, area, msg);
+            }
         }
     }
 
