@@ -72,7 +72,7 @@ position = { row = 1, col = 2 }
 # title = "Archived Tweets"
 # archive_query = "twitter.com/gethigher77*"  # Wayback query (wildcards allowed)
 # max_items = 20                               # Max tweets to display (default: 20)
-# position = { row = 2, col = 0 }
+# position = { row = 2, col = 1 }
 
 # YouTube Widget - Optional
 # Display YouTube videos from channels or search queries

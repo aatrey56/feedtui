@@ -20,9 +20,21 @@ impl TwitterArchiveFetcher {
     /// Fetch capture records from the Wayback Machine CDX API.
     /// Returns JSON rows: [urlkey, timestamp, original, mimetype, statuscode, digest, length]
     async fn fetch_cdx_records(&self) -> Result<Vec<TwitterArchiveItem>> {
+        // Ensure the query targets tweet URLs specifically (/status/*)
+        // so we don't waste our limit on profile/media pages
+        let query = if self.archive_query.contains("/status") {
+            self.archive_query.clone()
+        } else {
+            let base = self
+                .archive_query
+                .trim_end_matches('*')
+                .trim_end_matches('/');
+            format!("{}/status/*", base)
+        };
+
         let url = format!(
-            "https://web.archive.org/cdx/search/cdx?url={}&output=json&limit={}&fl=timestamp,original,statuscode&filter=statuscode:200&collapse=urlkey&sort=timestamp:desc",
-            urlencoding::encode(&self.archive_query),
+            "https://web.archive.org/cdx/search/cdx?url={}&output=json&limit={}&fl=timestamp,original,statuscode&filter=statuscode:200&collapse=urlkey",
+            urlencoding::encode(&query),
             self.max_items + 1, // +1 because first row is the header
         );
 
@@ -48,10 +60,23 @@ impl TwitterArchiveFetcher {
                 let timestamp = &row[0];
                 let original = &row[1];
 
-                // Filter to only tweet URLs (contain /status/)
-                let is_tweet = original.contains("/status/");
-
-                if !is_tweet {
+                // Filter to only clean tweet URLs (contain /status/<id>)
+                // Skip bare /status pages, URLs with query params or encoding artifacts
+                if !original.contains("/status/") {
+                    return None;
+                }
+                // Extract the part after /status/ and check it starts with a digit
+                let after_status = original.split("/status/").nth(1).unwrap_or("");
+                let tweet_id = after_status
+                    .split(&['?', '%', '#', '"'][..])
+                    .next()
+                    .unwrap_or("");
+                if tweet_id.is_empty()
+                    || !tweet_id
+                        .chars()
+                        .next()
+                        .map_or(false, |c| c.is_ascii_digit())
+                {
                     return None;
                 }
 
