@@ -76,10 +76,7 @@ impl TwitterArchiveFetcher {
                     .next()
                     .unwrap_or("");
                 if tweet_id.is_empty()
-                    || !tweet_id
-                        .chars()
-                        .next()
-                        .is_some_and(|c| c.is_ascii_digit())
+                    || !tweet_id.chars().next().is_some_and(|c| c.is_ascii_digit())
                 {
                     return None;
                 }
@@ -108,11 +105,13 @@ impl TwitterArchiveFetcher {
 
         Ok(items)
     }
-
 }
 
 /// Fetch the archived HTML page and extract tweet text using multiple strategies.
-async fn fetch_tweet_text_with_client(client: &reqwest::Client, archive_url: &str) -> Option<String> {
+async fn fetch_tweet_text_with_client(
+    client: &reqwest::Client,
+    archive_url: &str,
+) -> Option<String> {
     let response = match client.get(archive_url).send().await {
         Ok(resp) => resp,
         Err(e) => {
@@ -200,7 +199,12 @@ fn extract_meta_content(document: &Html, selector_str: &str) -> Option<String> {
 fn extract_element_text(document: &Html, selector_str: &str) -> Option<String> {
     let selector = Selector::parse(selector_str).ok()?;
     let element = document.select(&selector).next()?;
-    let text: String = element.text().collect::<Vec<_>>().join("").trim().to_string();
+    let text: String = element
+        .text()
+        .collect::<Vec<_>>()
+        .join("")
+        .trim()
+        .to_string();
     if text.is_empty() {
         None
     } else {
@@ -431,10 +435,7 @@ mod tests {
     #[test]
     fn test_extract_tweet_text_og_wins_over_p_tweet_text() {
         let html = r#"<html><head><meta property="og:description" content="OG wins"></head><body><p class="tweet-text">Should not be picked</p></body></html>"#;
-        assert_eq!(
-            extract_tweet_text(html),
-            Some("OG wins".to_string())
-        );
+        assert_eq!(extract_tweet_text(html), Some("OG wins".to_string()));
     }
 
     #[test]
